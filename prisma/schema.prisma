@@ -1,0 +1,386 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PropertyStatus {
+  AVAILABLE
+  VISIT_SCHEDULED
+  RESERVED
+  RENTED
+  REMOVED
+  TO_VERIFY
+  ARCHIVED
+}
+
+enum ProspectStatus {
+  NEW
+  TO_CONTACT
+  QUALIFIED
+  PROPERTIES_PROPOSED
+  VISIT_REQUESTED
+  VISIT_CONFIRMED
+  FILE_SUBMITTED
+  ACCEPTED
+  PLACED
+  REFUSED
+  INACTIVE
+}
+
+enum VisitStatus {
+  REQUESTED
+  PENDING_APPROVAL
+  CONFIRMED
+  REFUSED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum CommissionStatus {
+  PLANNED
+  CONFIRMED
+  INVOICED
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum CommunicationType {
+  PHONE
+  EMAIL
+  MESSENGER
+  SMS
+  IN_PERSON
+  OTHER
+}
+
+enum AdType {
+  MARKETPLACE
+  FACEBOOK_GROUP
+  MULTI_PROPERTY
+  MESSENGER_SHORT
+}
+
+enum AdLanguage {
+  FR
+  EN
+  BILINGUAL
+}
+
+enum AdvertisementStatus {
+  DRAFT
+  PUBLISHED
+  RETIRED
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  auditLogs    AuditLog[]
+  interactions ProspectInteraction[]
+  googleCalendarConnection GoogleCalendarConnection?
+  visitAvailabilitySettings VisitAvailabilitySettings?
+  blockedVisitPeriods VisitBlockedPeriod[]
+
+  @@index([createdAt])
+}
+
+model Property {
+  id                     String                 @id @default(cuid())
+  codeIsr                String                 @unique
+  address                String
+  city                   String
+  district               String?
+  monthlyPrice           Int
+  propertyType           String
+  bedrooms               Int
+  availableFrom          DateTime?
+  petsAllowed            Boolean                @default(false)
+  petsDetails            String?
+  parking                Boolean                @default(false)
+  inclusions             String?
+  descriptionFr          String
+  descriptionEn          String
+  gestionIsrUrl          String?
+  marketplaceUrl         String?
+  facebookPostUrl        String?
+  marketingPriority      Int                    @default(3)
+  lastVerificationDate   DateTime?
+  status                 PropertyStatus         @default(AVAILABLE)
+  archivedAt             DateTime?
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  photos                 PropertyPhoto[]
+  visits                 Visit[]
+  placements             Placement[]
+  advertisements         Advertisement[]
+  prospectMatches        ProspectPropertyMatch[]
+  sourceProspects        Prospect[]             @relation("FirstContactProperty")
+
+  @@index([city, status])
+  @@index([monthlyPrice])
+  @@index([bedrooms])
+}
+
+model PropertyPhoto {
+  id          String   @id @default(cuid())
+  propertyId  String
+  url         String
+  sortOrder   Int      @default(0)
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId, sortOrder])
+}
+
+model Prospect {
+  id                       String                 @id @default(cuid())
+  name                     String
+  phone                    String
+  email                    String?
+  messengerUrl             String?
+  preferredLanguage        String                 @default("fr")
+  maxBudget                Int?
+  preferredDistricts       String[]
+  bedroomsNeeded           Int?
+  moveInDate               DateTime?
+  hasPets                  Boolean                @default(false)
+  needsParking             Boolean                @default(false)
+  jobTitle                 String?
+  firstContactPropertyId   String?
+  nextFollowUpAt           DateTime?
+  notes                    String?
+  status                   ProspectStatus         @default(NEW)
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
+  lastContactAt            DateTime?
+  firstContactProperty     Property?              @relation("FirstContactProperty", fields: [firstContactPropertyId], references: [id])
+  interactions             ProspectInteraction[]
+  matches                  ProspectPropertyMatch[]
+  visits                   Visit[]
+  placements               Placement[]
+
+  @@index([status])
+  @@index([nextFollowUpAt])
+}
+
+model ProspectInteraction {
+  id          String            @id @default(cuid())
+  prospectId  String
+  userId      String?
+  at          DateTime          @default(now())
+  type        CommunicationType
+  summary     String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  prospect    Prospect          @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  user        User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([prospectId, at])
+}
+
+model ProspectPropertyMatch {
+  id                  String    @id @default(cuid())
+  prospectId          String
+  propertyId          String
+  score               Int
+  budgetCompatible    Boolean
+  districtCompatible  Boolean
+  bedroomsCompatible  Boolean
+  dateCompatible      Boolean
+  petsCompatible      Boolean
+  parkingCompatible   Boolean
+  reasons             String[]
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  prospect            Prospect  @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  property            Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([prospectId, propertyId])
+  @@index([prospectId, score])
+}
+
+model Visit {
+  id               String     @id @default(cuid())
+  prospectId       String
+  propertyId       String
+  startsAt         DateTime
+  endsAt           DateTime
+  bufferMinutes    Int        @default(30)
+  minimumLeadHours Int        @default(2)
+  requestedAt      DateTime   @default(now())
+  approvedAt       DateTime?
+  refusedAt        DateTime?
+  cancelledAt      DateTime?
+  completedAt      DateTime?
+  noShowAt         DateTime?
+  notes            String?
+  internalNotes    String?
+  googleEventId    String?
+  googleEventHtmlLink String?
+  googleSyncStatus String?
+  idempotencyKey   String?
+  status           VisitStatus @default(PENDING_APPROVAL)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  prospect         Prospect   @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  property         Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  placements       Placement[]
+
+  @@index([startsAt, status])
+  @@index([prospectId])
+  @@index([propertyId])
+  @@unique([prospectId, propertyId, startsAt])
+  @@unique([idempotencyKey])
+  @@unique([googleEventId])
+}
+
+model GoogleCalendarConnection {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  googleAccountEmail   String?
+  calendarId           String
+  accessTokenEncrypted String
+  refreshTokenEncrypted String
+  accessTokenExpiresAt DateTime
+  scopes               String[]
+  connectedAt          DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  lastSyncAt           DateTime?
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([updatedAt])
+}
+
+model VisitAvailabilitySettings {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  timeZone              String   @default("America/Toronto")
+  visitDurationMinutes  Int      @default(30)
+  bufferMinutes         Int      @default(30)
+  minLeadHours          Int      @default(2)
+  maxVisitsPerEvening   Int      @default(4)
+  weekSchedule          Json
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([updatedAt])
+}
+
+model VisitBlockedPeriod {
+  id          String   @id @default(cuid())
+  userId      String
+  startsAt    DateTime
+  endsAt      DateTime
+  reason      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startsAt, endsAt])
+}
+
+model Placement {
+  id                        String      @id @default(cuid())
+  prospectId                String
+  propertyId                String
+  visitId                   String?
+  visitDate                 DateTime?
+  sentToColleaguesDate      DateTime?
+  acceptanceDate            DateTime?
+  signatureDate             DateTime?
+  moveInDate                DateTime?
+  notes                     String?
+  createdAt                 DateTime    @default(now())
+  updatedAt                 DateTime    @updatedAt
+  prospect                  Prospect    @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  property                  Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  visit                     Visit?      @relation(fields: [visitId], references: [id], onDelete: SetNull)
+  commission                Commission?
+
+  @@index([moveInDate])
+}
+
+model Commission {
+  id                  String           @id @default(cuid())
+  placementId         String           @unique
+  plannedAmount       Int              @default(500)
+  invoicedAmount      Int?
+  receivedAmount      Int?
+  invoiceNumber       String?
+  status              CommissionStatus @default(PLANNED)
+  billedAt            DateTime?
+  receivedAt          DateTime?
+  notes               String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  placement           Placement        @relation(fields: [placementId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Advertisement {
+  id                  String               @id @default(cuid())
+  propertyId          String?
+  type                AdType
+  language            AdLanguage
+  title               String
+  body                String
+  status              AdvertisementStatus  @default(DRAFT)
+  generatedAutomatically Boolean           @default(true)
+  manuallyEdited      Boolean              @default(false)
+  generatedAt         DateTime?
+  sourcePropertyUpdatedAt DateTime?
+  generatorVersion    String?
+  publishedAt         DateTime?
+  publicationUrl      String?
+  messagesReceived    Int                  @default(0)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  property            Property?            @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  versions            AdvertisementVersion[]
+
+  @@index([status, publishedAt])
+  @@unique([propertyId, type, language])
+}
+
+model AdvertisementVersion {
+  id               String         @id @default(cuid())
+  advertisementId  String
+  type             AdType
+  language         AdLanguage
+  title            String
+  body             String
+  changeSource     String?
+  createdAt        DateTime       @default(now())
+  advertisement    Advertisement  @relation(fields: [advertisementId], references: [id], onDelete: Cascade)
+
+  @@index([advertisementId, createdAt])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  entity      String
+  entityId    String
+  action      String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+}

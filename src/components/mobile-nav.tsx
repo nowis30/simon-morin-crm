@@ -10,6 +10,7 @@ const links = [
   { href: "/prospects", label: "Prospects" },
   { href: "/matches", label: "Correspondances" },
   { href: "/marketing", label: "Marketing" },
+  { href: "/marketing/approval", label: "Approbation Facebook" },
   { href: "/visits", label: "Visites" },
   { href: "/visits/pending", label: "Visites en attente" },
   { href: "/placements", label: "Placements" },

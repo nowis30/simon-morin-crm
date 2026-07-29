@@ -28,6 +28,10 @@ services:
         sync: false
       - key: APP_TIME_ZONE
         value: America/Toronto
+      - key: PUBLIC_CONTACT_EMAIL
+        sync: false
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://simon-morin-agent-location.onrender.com
       - key: META_APP_ID
         sync: false
       - key: META_APP_SECRET
@@ -36,6 +40,14 @@ services:
         sync: false
       - key: META_PAGE_ACCESS_TOKEN
         sync: false
+      - key: META_REDIRECT_URI
+        value: https://simon-morin-agent-location.onrender.com/api/integrations/meta/facebook/callback
+      - key: META_VERIFY_TOKEN
+        sync: false
+      - key: META_TOKEN_ENCRYPTION_KEY
+        sync: false
+      - key: META_DRY_RUN
+        value: "true"
 
 databases:
   - name: simon-morin-location-db

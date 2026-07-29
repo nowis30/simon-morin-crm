@@ -4,7 +4,25 @@ export const GENERATOR_VERSION = "2026-07-28.1";
 export const REGENERATION_BATCH_SIZE = 5;
 
 export type MarketingProperty = Property & { photos: PropertyPhoto[] };
-export type MarketingAd = Advertisement;
+export type MarketingAd = Pick<Advertisement,
+  | "id"
+  | "propertyId"
+  | "type"
+  | "language"
+  | "title"
+  | "body"
+  | "status"
+  | "generatedAutomatically"
+  | "manuallyEdited"
+  | "generatedAt"
+  | "sourcePropertyUpdatedAt"
+  | "generatorVersion"
+  | "publicationUrl"
+  | "publishedAt"
+  | "messagesReceived"
+  | "createdAt"
+  | "updatedAt"
+>;
 
 export type GenerationMode = "INCOMPLETE_ONLY" | "AUTOMATIC_ONLY" | "FORCE_ALL";
 

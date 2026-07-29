@@ -26,14 +26,18 @@ export function createOAuthState(userId: string) {
   return `${userId}:${nonce}`;
 }
 
-export function createGoogleCalendarAuthUrl(state: string) {
+export function createGoogleCalendarAuthUrl(state: string, baseUrl?: string) {
   if (!hasGoogleCalendarCredentials()) {
     throw new Error("Configuration Google Agenda incomplete");
   }
 
+  const callbackUrl = baseUrl
+    ? new URL("/api/integrations/google/calendar/callback", baseUrl).toString()
+    : env.GOOGLE_REDIRECT_URI!;
+
   const params = new URLSearchParams({
     client_id: env.GOOGLE_CLIENT_ID!,
-    redirect_uri: env.GOOGLE_REDIRECT_URI!,
+    redirect_uri: callbackUrl,
     response_type: "code",
     access_type: "offline",
     prompt: "consent",

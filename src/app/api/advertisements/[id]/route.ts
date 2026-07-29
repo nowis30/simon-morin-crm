@@ -24,7 +24,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       body?: string;
       publicationUrl?: string;
       messagesReceived?: number;
-      status?: "DRAFT" | "PUBLISHED" | "RETIRED";
+      status?: AdvertisementStatus;
     };
 
     const title = cleanText(payload.title);

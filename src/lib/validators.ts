@@ -145,6 +145,67 @@ export const visitMutationSchema = z.object({
   notes: z.string().max(1000).optional(),
 });
 
+export const advertisementApprovalSchema = z.object({
+  action: z.enum(["APPROVE", "REQUEST_CHANGES", "REJECT", "CANCEL_APPROVAL", "MANUAL_REQUIRED"]),
+  notes: z.string().max(1000).optional(),
+});
+
+export const approveAllContentsSchema = z.object({
+  propertyId: z.string().min(1),
+  confirm: z.literal(true),
+});
+
+export const publishPageSchema = z.object({
+  idempotencyKey: z.string().min(8).max(160),
+});
+
+export const marketplacePublishSchema = z.object({
+  publicationUrl: z.string().url(),
+  checklist: z.object({
+    prix: z.boolean(),
+    adresse: z.boolean(),
+    chambres: z.boolean(),
+    disponibilite: z.boolean(),
+    animaux: z.boolean(),
+    stationnement: z.boolean(),
+    photos: z.boolean(),
+    coordonnees: z.boolean(),
+  }),
+});
+
+export const facebookGroupSchema = z.object({
+  name: z.string().min(2).max(200),
+  link: z.string().url(),
+  city: z.string().max(120).optional(),
+  sectors: z.array(z.string().max(120)).default([]),
+  language: z.string().max(20).optional(),
+  active: z.boolean().default(true),
+  isMember: z.boolean().default(false),
+  isAdminOrModerator: z.boolean().default(false),
+  rules: z.string().max(2000).optional(),
+  notes: z.string().max(1000).optional(),
+  minDelayHours: z.number().int().min(1).max(720).default(24),
+});
+
+export const groupPublicationSchema = z.object({
+  groupId: z.string().min(1),
+  publicationUrl: z.string().url().optional(),
+  customText: z.string().max(4000).optional(),
+  status: z.enum(["PENDING", "MANUAL_ACTION_REQUIRED", "PUBLISHED", "FAILED"]),
+});
+
+export const advertisementPhotoSelectionSchema = z.object({
+  channel: z.enum(["PAGE", "MARKETPLACE", "FACEBOOK_GROUP"]),
+  items: z.array(
+    z.object({
+      propertyPhotoId: z.string().min(1),
+      sortOrder: z.number().int().min(0),
+      isPrimary: z.boolean().optional(),
+      excluded: z.boolean().optional(),
+    }),
+  ).min(1),
+});
+
 export const placementCreateSchema = z.object({
   prospectId: z.string().min(1),
   propertyId: z.string().min(1),

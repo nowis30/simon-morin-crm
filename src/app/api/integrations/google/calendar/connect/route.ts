@@ -15,7 +15,7 @@ export async function GET() {
     }
 
     const state = createOAuthState(auth.user!.id);
-    const url = createGoogleCalendarAuthUrl(state);
+    const url = createGoogleCalendarAuthUrl(state, process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000");
     const response = NextResponse.redirect(url);
     response.cookies.set({
       name: "google_oauth_state",

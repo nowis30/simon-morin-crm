@@ -10,6 +10,14 @@ const envSchema = z.object({
   GOOGLE_CALENDAR_ID: z.string().optional(),
   GOOGLE_TOKEN_ENCRYPTION_KEY: z.string().optional(),
   APP_TIME_ZONE: z.string().optional(),
+  PUBLIC_CONTACT_EMAIL: z.string().optional(),
+  META_APP_ID: z.string().optional(),
+  META_APP_SECRET: z.string().optional(),
+  META_REDIRECT_URI: z.string().optional(),
+  META_PAGE_ID: z.string().optional(),
+  META_PAGE_ACCESS_TOKEN: z.string().optional(),
+  META_VERIFY_TOKEN: z.string().optional(),
+  META_TOKEN_ENCRYPTION_KEY: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -30,6 +38,14 @@ export const env = parsed.success
       GOOGLE_CALENDAR_ID: "primary",
       GOOGLE_TOKEN_ENCRYPTION_KEY: undefined,
       APP_TIME_ZONE: "America/Toronto",
+      PUBLIC_CONTACT_EMAIL: undefined,
+      META_APP_ID: undefined,
+      META_APP_SECRET: undefined,
+      META_REDIRECT_URI: undefined,
+      META_PAGE_ID: undefined,
+      META_PAGE_ACCESS_TOKEN: undefined,
+      META_VERIFY_TOKEN: undefined,
+      META_TOKEN_ENCRYPTION_KEY: undefined,
     };
 
 export const isGoogleCalendarConfigured = Boolean(
@@ -47,3 +63,15 @@ export function getGoogleCalendarConfigIssues() {
   if (!env.GOOGLE_TOKEN_ENCRYPTION_KEY) issues.push("GOOGLE_TOKEN_ENCRYPTION_KEY manquant");
   return issues;
 }
+
+export function getMetaConfigIssues() {
+  const issues: string[] = [];
+  if (!env.META_PAGE_ID) issues.push("META_PAGE_ID manquant");
+  if (!env.META_TOKEN_ENCRYPTION_KEY) issues.push("META_TOKEN_ENCRYPTION_KEY manquant");
+  if (!env.META_PAGE_ACCESS_TOKEN && (!env.META_APP_ID || !env.META_APP_SECRET || !env.META_REDIRECT_URI)) {
+    issues.push("META_PAGE_ACCESS_TOKEN ou flux OAuth Meta incomplet");
+  }
+  return issues;
+}
+
+export const isMetaConfigured = getMetaConfigIssues().length === 0;

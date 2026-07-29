@@ -74,8 +74,28 @@ enum AdLanguage {
 
 enum AdvertisementStatus {
   DRAFT
+  READY_FOR_REVIEW
+  CHANGES_REQUESTED
+  APPROVED
+  PUBLISHING
   PUBLISHED
+  MANUAL_ACTION_REQUIRED
+  FAILED
+  ARCHIVED
   RETIRED
+}
+
+enum PublicationChannel {
+  PAGE
+  MARKETPLACE
+  FACEBOOK_GROUP
+}
+
+enum GroupPublicationStatus {
+  PENDING
+  MANUAL_ACTION_REQUIRED
+  PUBLISHED
+  FAILED
 }
 
 model User {
@@ -88,8 +108,11 @@ model User {
   auditLogs    AuditLog[]
   interactions ProspectInteraction[]
   googleCalendarConnection GoogleCalendarConnection?
+  metaConnection        MetaConnection?
   visitAvailabilitySettings VisitAvailabilitySettings?
   blockedVisitPeriods VisitBlockedPeriod[]
+  approvedAdvertisements Advertisement[] @relation("ApprovedByUser")
+  publishedAdvertisements Advertisement[] @relation("PublishedByUser")
 
   @@index([createdAt])
 }
@@ -140,6 +163,7 @@ model PropertyPhoto {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  advertisementSelections AdvertisementSelectedPhoto[]
 
   @@index([propertyId, sortOrder])
 }
@@ -350,11 +374,127 @@ model Advertisement {
   messagesReceived    Int                  @default(0)
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
+  approvedAt          DateTime?
+  approvedByUserId    String?
+  approvalNotes       String?
+  requiresManualAction Boolean             @default(false)
+  approvalWarnings    String[]
+  latestErrorMessage  String?
+  externalPublicationId String?
+  publicationChannel  PublicationChannel?
+  publishedByUserId   String?
+  idempotencyKey      String?
+  contentFingerprint  String?
   property            Property?            @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  approvedByUser      User?                @relation("ApprovedByUser", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  publishedByUser     User?                @relation("PublishedByUser", fields: [publishedByUserId], references: [id], onDelete: SetNull)
   versions            AdvertisementVersion[]
+  selectedPhotos      AdvertisementSelectedPhoto[]
+  publications        AdvertisementPublication[]
+  groupPublications   FacebookGroupPublication[]
 
   @@index([status, publishedAt])
   @@unique([propertyId, type, language])
+  @@unique([idempotencyKey])
+}
+
+model AdvertisementSelectedPhoto {
+  id               String             @id @default(cuid())
+  advertisementId  String
+  propertyPhotoId  String
+  channel          PublicationChannel
+  sortOrder        Int                @default(0)
+  isPrimary        Boolean            @default(false)
+  excluded         Boolean            @default(false)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  advertisement    Advertisement      @relation(fields: [advertisementId], references: [id], onDelete: Cascade)
+  propertyPhoto    PropertyPhoto      @relation(fields: [propertyPhotoId], references: [id], onDelete: Cascade)
+
+  @@unique([advertisementId, propertyPhotoId, channel])
+  @@index([advertisementId, channel, sortOrder])
+}
+
+model AdvertisementPublication {
+  id                  String               @id @default(cuid())
+  advertisementId     String
+  channel             PublicationChannel
+  destination         String?
+  status              AdvertisementStatus  @default(DRAFT)
+  externalId          String?
+  publicationUrl      String?
+  idempotencyKey      String?
+  errorMessage        String?
+  checklist           Json?
+  messagesReceived    Int                  @default(0)
+  prospectsCount      Int                  @default(0)
+  visitsCount         Int                  @default(0)
+  placementsCount     Int                  @default(0)
+  commissionAmount    Int                  @default(0)
+  publishedAt         DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  advertisement       Advertisement        @relation(fields: [advertisementId], references: [id], onDelete: Cascade)
+
+  @@index([advertisementId, channel])
+  @@unique([idempotencyKey])
+}
+
+model MetaConnection {
+  id                       String   @id @default(cuid())
+  userId                   String   @unique
+  pageId                   String
+  pageName                 String?
+  pageAccessTokenEncrypted String
+  userAccessTokenEncrypted String?
+  scopes                   String[]
+  connectedAt              DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  lastSyncAt               DateTime?
+  revokedAt                DateTime?
+  user                     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([updatedAt])
+}
+
+model FacebookGroup {
+  id                 String   @id @default(cuid())
+  name               String
+  link               String
+  city               String?
+  sectors            String[]
+  language           String?
+  active             Boolean  @default(true)
+  isMember           Boolean  @default(false)
+  isAdminOrModerator Boolean  @default(false)
+  rules              String?
+  notes              String?
+  lastPublishedAt    DateTime?
+  minDelayHours      Int      @default(24)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  publications       FacebookGroupPublication[]
+
+  @@index([active, city])
+}
+
+model FacebookGroupPublication {
+  id               String                @id @default(cuid())
+  advertisementId  String
+  groupId          String
+  customText       String?
+  publicationUrl   String?
+  status           GroupPublicationStatus @default(PENDING)
+  warningMessages  String[]
+  externalId       String?
+  publishedAt      DateTime?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  advertisement    Advertisement         @relation(fields: [advertisementId], references: [id], onDelete: Cascade)
+  group            FacebookGroup         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([advertisementId, groupId])
+  @@index([status, publishedAt])
 }
 
 model AdvertisementVersion {

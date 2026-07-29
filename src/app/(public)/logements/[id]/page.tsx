@@ -1,20 +1,36 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { ListingPhotoGallery } from "@/components/public/listing-photo-gallery";
 import { VisitRequestForm } from "@/components/public/visit-request-form";
-import { formatPublicAddress, getPublicFeatures, getPublicVisibilityForRentalUnit, isPublicPropertyVisible } from "@/lib/public-listings";
+import { dedupeListingPhotos, formatPublicAddress, getPublicFeatures, getPublicVisibilityForRentalUnit, isPublicPropertyVisible, type ListingPhoto } from "@/lib/public-listings";
 
 export default async function PublicListingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
   const rentalUnit = await prisma.rentalUnit.findUnique({
     where: { id },
-    include: { building: true, photos: { orderBy: { sortOrder: "asc" } } },
+    include: {
+      building: { include: { photos: { orderBy: { sortOrder: "asc" } } } },
+      photos: { orderBy: { sortOrder: "asc" } },
+    },
   });
 
   if (rentalUnit) {
     const isUnavailable = !getPublicVisibilityForRentalUnit({ status: rentalUnit.status, isPubliclyVisible: rentalUnit.isPubliclyVisible });
     const linkedProperty = await prisma.property.findFirst({ where: { rentalUnitId: rentalUnit.id } });
+
+    const unitPhotos: ListingPhoto[] = rentalUnit.photos.map((photo) => ({
+      url: photo.url,
+      description: photo.description,
+      category: "UNIT",
+    }));
+    const buildingPhotos: ListingPhoto[] = rentalUnit.building.photos.map((photo) => ({
+      url: photo.url,
+      description: photo.description,
+      category: "BUILDING",
+    }));
+    const galleryPhotos = dedupeListingPhotos([...unitPhotos, ...buildingPhotos]);
 
     const item = {
       id: rentalUnit.id,
@@ -30,9 +46,12 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
         parking: rentalUnit.parking,
         inclusions: rentalUnit.inclusions,
       }),
-      photos: [rentalUnit.primaryPhotoUrl, ...rentalUnit.photos.map((photo) => photo.url)].filter(Boolean) as string[],
+      photos: [rentalUnit.primaryPhotoUrl || galleryPhotos[0]?.url, ...galleryPhotos.map((photo) => photo.url)].filter(Boolean) as string[],
       linkedPropertyId: linkedProperty?.id,
       isUnavailable,
+      photoCount: galleryPhotos.length,
+      unitPhotos,
+      buildingPhotos,
     };
 
     return (
@@ -42,7 +61,11 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
           <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
             <section className="space-y-6">
               <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70">
-                {item.photos?.[0] ? <img src={item.photos[0]} alt={item.address} className="h-80 w-full object-cover" /> : null}
+                {item.photoCount > 0 ? (
+                  <ListingPhotoGallery title={item.address} unitPhotos={item.unitPhotos} buildingPhotos={item.buildingPhotos} />
+                ) : (
+                  <div className="flex h-80 items-center justify-center text-sm text-slate-400">Aucune photo disponible pour ce logement.</div>
+                )}
               </div>
               <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
                 <h1 className="text-3xl font-semibold">{item.address}</h1>
@@ -107,6 +130,8 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
       inclusions: property.inclusions,
     }),
     photos: property.photos.map((photo) => photo.url),
+    photoCount: property.photos.length,
+    unitPhotos: property.photos.map((photo) => ({ url: photo.url, description: photo.description, category: "UNKNOWN" as const })),
   };
 
   return (
@@ -116,7 +141,11 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
         <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
           <section className="space-y-6">
             <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70">
-              {fallbackItem.photos?.[0] ? <img src={fallbackItem.photos[0]} alt={fallbackItem.address} className="h-80 w-full object-cover" /> : null}
+              {fallbackItem.photoCount > 0 ? (
+                <ListingPhotoGallery title={fallbackItem.address} unitPhotos={fallbackItem.unitPhotos} />
+              ) : (
+                <div className="flex h-80 items-center justify-center text-sm text-slate-400">Aucune photo disponible pour ce logement.</div>
+              )}
             </div>
             <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
               <h1 className="text-3xl font-semibold">{fallbackItem.address}</h1>

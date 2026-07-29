@@ -40,3 +40,37 @@ export function getPublicVisibilityForRentalUnit(input: { status: string; isPubl
   }
   return isPublicPropertyVisible(input.status);
 }
+
+export type ListingPhotoCategory = "UNIT" | "BUILDING" | "COMMON" | "STAGED" | "PLAN" | "UNKNOWN";
+
+export type ListingPhoto = {
+  url: string;
+  description?: string | null;
+  category?: ListingPhotoCategory | null;
+};
+
+export function dedupeListingPhotos<T extends ListingPhoto>(photos: T[]) {
+  const normalized = photos
+    .filter((photo) => Boolean(photo?.url))
+    .map((photo) => ({
+      ...photo,
+      url: photo.url.trim(),
+      description: photo.description?.trim() || null,
+      category: photo.category || "UNKNOWN",
+    }))
+    .filter((photo) => Boolean(photo.url));
+
+  const seen = new Set<string>();
+  const deduped: T[] = [];
+
+  for (const photo of normalized) {
+    const normalizedUrl = photo.url.toLowerCase();
+    if (seen.has(normalizedUrl)) {
+      continue;
+    }
+    seen.add(normalizedUrl);
+    deduped.push(photo);
+  }
+
+  return deduped;
+}

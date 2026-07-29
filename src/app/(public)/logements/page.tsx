@@ -16,6 +16,7 @@ async function getCatalogItems() {
       propertyType: string;
       status: string;
       imageUrl?: string | null;
+      photoCount?: number;
       features: string[];
     }>;
   }
@@ -31,6 +32,7 @@ async function getCatalogItems() {
     propertyType: string;
     status: string;
     imageUrl?: string | null;
+    photoCount?: number;
     features: string[];
   }>;
 }
@@ -64,7 +66,10 @@ export default async function PublicListingsPage() {
                   {item.features.slice(0, 3).map((feature) => <li key={feature}>• {feature}</li>)}
                 </ul>
                 <div className="flex items-center justify-between">
-                  <p className="text-lg font-semibold">{item.monthlyPrice.toLocaleString("fr-CA")} $ / mois</p>
+                  <div>
+                    <p className="text-lg font-semibold">{item.monthlyPrice.toLocaleString("fr-CA")} $ / mois</p>
+                    <p className="text-xs text-slate-400">{item.photoCount ? `${item.photoCount} photo${item.photoCount > 1 ? "s" : ""}` : "Aucune photo"}</p>
+                  </div>
                   <Link href={`/logements/${item.id}`} className="rounded-full bg-emerald-500 px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-emerald-400">Voir le logement</Link>
                 </div>
               </div>

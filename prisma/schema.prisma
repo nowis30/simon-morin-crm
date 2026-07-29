@@ -190,6 +190,24 @@ model Building {
   @@index([city])
 }
 
+model GestionIsrSyncPreview {
+  id          String     @id @default(cuid())
+  userId      String
+  sourceUrl   String
+  sourceHash  String
+  sourceCount Int
+  summary     Json
+  snapshot    Json?
+  createdAt   DateTime   @default(now())
+  expiresAt   DateTime
+  appliedAt   DateTime?
+  status      String     @default("ACTIVE")
+  auditLogs   AuditLog[]
+
+  @@index([userId, status, expiresAt])
+  @@index([sourceHash])
+}
+
 model BuildingPhoto {
   id          String   @id @default(cuid())
   buildingId  String
@@ -622,14 +640,16 @@ model AdvertisementVersion {
 }
 
 model AuditLog {
-  id        String   @id @default(cuid())
-  userId    String?
-  entity    String
-  entityId  String
-  action    String
-  metadata  Json?
-  createdAt DateTime @default(now())
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id                      String                 @id @default(cuid())
+  userId                  String?
+  entity                  String
+  entityId                String
+  action                  String
+  metadata                Json?
+  createdAt               DateTime               @default(now())
+  user                    User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  GestionIsrSyncPreview   GestionIsrSyncPreview? @relation(fields: [gestionIsrSyncPreviewId], references: [id])
+  gestionIsrSyncPreviewId String?
 
   @@index([entity, entityId])
   @@index([createdAt])

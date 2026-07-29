@@ -97,6 +97,28 @@ export const visitCreateSchema = z.object({
   idempotencyKey: z.string().max(120).optional(),
 });
 
+export const publicVisitSubmissionSchema = z.object({
+  prospect: z.object({
+    name: z.string().min(2).max(120),
+    phone: z.string().min(7).max(30),
+    email: z.string().email().optional().or(z.literal("")),
+    preferredLanguage: z.enum(["fr", "en"]).default("fr"),
+    maxBudget: z.coerce.number().int().positive().optional(),
+    preferredDistricts: z.array(z.string().min(1)).default([]),
+    bedroomsNeeded: z.coerce.number().int().min(0).max(10).optional(),
+    moveInDate: z.string().optional(),
+    hasPets: z.coerce.boolean().default(false),
+    needsParking: z.coerce.boolean().default(false),
+    notes: z.string().max(1500).optional(),
+  }),
+  visit: z.object({
+    propertyId: z.string().min(1),
+    startsAt: z.string().datetime(),
+    endsAt: z.string().datetime().optional(),
+    notes: z.string().max(1000).optional(),
+  }),
+});
+
 export const visitApprovalSchema = z.object({
   approved: z.boolean(),
   notes: z.string().max(1000).optional(),

@@ -1,56 +1,64 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { writeAuditLog } from "@/lib/audit";
 import { cleanText } from "@/lib/sanitize";
-import { prospectCreateSchema, visitCreateSchema } from "@/lib/validators";
+import { publicVisitSubmissionSchema } from "@/lib/validators";
 
 export async function POST(request: Request) {
-  const payload = await request.json();
-  const prospectParsed = prospectCreateSchema.safeParse(payload.prospect);
-  const visitParsed = visitCreateSchema.safeParse(payload.visit);
+  const payload = await request.json().catch(() => ({}));
+  const parsed = publicVisitSubmissionSchema.safeParse(payload);
 
-  if (!prospectParsed.success || !visitParsed.success) {
+  if (!parsed.success) {
     return NextResponse.json({ error: "Donnees invalides" }, { status: 400 });
   }
 
-  const prospect = await prisma.prospect.create({
+  const { prospect, visit } = parsed.data;
+  const property = await prisma.property.findUnique({ where: { id: visit.propertyId } });
+  if (!property) {
+    return NextResponse.json({ error: "Cette propriété n’est plus disponible pour la visite." }, { status: 404 });
+  }
+
+  const prospectRecord = await prisma.prospect.create({
     data: {
-      name: cleanText(prospectParsed.data.name),
-      phone: cleanText(prospectParsed.data.phone),
-      email: cleanText(prospectParsed.data.email) || null,
-      preferredLanguage: prospectParsed.data.preferredLanguage,
-      maxBudget: prospectParsed.data.maxBudget,
-      preferredDistricts: prospectParsed.data.preferredDistricts.map((district) => cleanText(district)),
-      bedroomsNeeded: prospectParsed.data.bedroomsNeeded,
-      moveInDate: prospectParsed.data.moveInDate ? new Date(prospectParsed.data.moveInDate) : null,
-      hasPets: prospectParsed.data.hasPets,
-      needsParking: prospectParsed.data.needsParking,
-      firstContactPropertyId: visitParsed.data.propertyId,
-      notes: cleanText(prospectParsed.data.notes),
+      name: cleanText(prospect.name),
+      phone: cleanText(prospect.phone),
+      email: cleanText(prospect.email) || null,
+      preferredLanguage: prospect.preferredLanguage,
+      maxBudget: prospect.maxBudget,
+      preferredDistricts: prospect.preferredDistricts.map((district) => cleanText(district)),
+      bedroomsNeeded: prospect.bedroomsNeeded,
+      moveInDate: prospect.moveInDate ? new Date(prospect.moveInDate) : null,
+      hasPets: prospect.hasPets,
+      needsParking: prospect.needsParking,
+      firstContactPropertyId: property.id,
+      notes: cleanText(prospect.notes),
       status: "VISIT_REQUESTED",
       lastContactAt: new Date(),
     },
   });
 
-  const startsAt = new Date(visitParsed.data.startsAt);
-  const endsAt = visitParsed.data.endsAt ? new Date(visitParsed.data.endsAt) : new Date(startsAt.getTime() + 30 * 60 * 1000);
+  const startsAt = new Date(visit.startsAt);
+  const endsAt = visit.endsAt ? new Date(visit.endsAt) : new Date(startsAt.getTime() + 30 * 60 * 1000);
 
-  const visit = await prisma.visit.create({
+  const visitRecord = await prisma.visit.create({
     data: {
-      prospectId: prospect.id,
-      propertyId: visitParsed.data.propertyId,
+      prospectId: prospectRecord.id,
+      propertyId: property.id,
       startsAt,
       endsAt,
-      notes: cleanText(prospectParsed.data.notes),
+      notes: cleanText(prospect.notes),
       status: "PENDING_APPROVAL",
-      idempotencyKey: `public-${prospect.id}-${visitParsed.data.propertyId}-${startsAt.getTime()}`,
+      idempotencyKey: `public-${prospectRecord.id}-${property.id}-${startsAt.getTime()}`,
     },
     include: { prospect: true, property: true },
   });
 
-  await prisma.property.update({
-    where: { id: visitParsed.data.propertyId },
-    data: { status: "VISIT_SCHEDULED" },
+  await writeAuditLog({
+    entity: "Visit",
+    entityId: visitRecord.id,
+    action: "PUBLIC_VISIT_REQUESTED",
+    metadata: { propertyId: property.id, prospectId: prospectRecord.id, startsAt: startsAt.toISOString() },
   });
 
-  return NextResponse.json({ ok: true, item: visit });
+  return NextResponse.json({ ok: true, item: visitRecord });
 }

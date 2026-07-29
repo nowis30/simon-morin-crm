@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { VisitRequestForm } from "@/components/public/visit-request-form";
 import { formatPublicAddress, getPublicFeatures, getPublicVisibilityForRentalUnit, isPublicPropertyVisible } from "@/lib/public-listings";
 
 export default async function PublicListingDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -12,9 +13,8 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
   });
 
   if (rentalUnit) {
-    if (!getPublicVisibilityForRentalUnit({ status: rentalUnit.status, isPubliclyVisible: rentalUnit.isPubliclyVisible })) {
-      notFound();
-    }
+    const isUnavailable = !getPublicVisibilityForRentalUnit({ status: rentalUnit.status, isPubliclyVisible: rentalUnit.isPubliclyVisible });
+    const linkedProperty = await prisma.property.findFirst({ where: { rentalUnitId: rentalUnit.id } });
 
     const item = {
       id: rentalUnit.id,
@@ -31,6 +31,8 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
         inclusions: rentalUnit.inclusions,
       }),
       photos: [rentalUnit.primaryPhotoUrl, ...rentalUnit.photos.map((photo) => photo.url)].filter(Boolean) as string[],
+      linkedPropertyId: linkedProperty?.id,
+      isUnavailable,
     };
 
     return (
@@ -62,15 +64,18 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
             <aside className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
               <h2 className="text-xl font-semibold">Demander une visite</h2>
               <p className="mt-2 text-sm text-slate-400">Votre demande sera transmise à Simon pour confirmation manuelle.</p>
-              <form action="/api/public/visits" method="post" className="mt-6 space-y-4">
-                <input required name="name" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2" placeholder="Nom" />
-                <input required name="phone" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2" placeholder="Téléphone" />
-                <input type="email" name="email" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2" placeholder="Courriel" />
-                <input required type="datetime-local" name="startsAt" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2" />
-                <textarea name="notes" className="min-h-24 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2" placeholder="Informations complémentaires" />
-                <input type="hidden" name="propertyId" value={item.id} />
-                <button className="w-full rounded-full bg-emerald-500 px-4 py-3 font-medium text-slate-950" type="submit">Envoyer la demande</button>
-              </form>
+              {item.isUnavailable ? (
+                <div className="mt-6 space-y-4 rounded-xl border border-slate-700 bg-slate-950/70 p-4 text-sm text-slate-300">
+                  <p>Ce logement n’est plus disponible — voir les logements semblables.</p>
+                  <Link href="/logements" className="inline-flex rounded-full bg-emerald-500 px-4 py-2 font-medium text-slate-950">Voir les logements</Link>
+                </div>
+              ) : item.linkedPropertyId ? (
+                <VisitRequestForm propertyId={item.linkedPropertyId} rentalUnitId={item.id} />
+              ) : (
+                <div className="mt-6 rounded-xl border border-slate-700 bg-slate-950/70 p-4 text-sm text-slate-300">
+                  La demande de visite est temporairement désactivée pour cette unité en attente de validation.
+                </div>
+              )}
             </aside>
           </div>
         </div>
@@ -133,15 +138,7 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
           <aside className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
             <h2 className="text-xl font-semibold">Demander une visite</h2>
             <p className="mt-2 text-sm text-slate-400">Votre demande sera transmise à Simon pour confirmation manuelle.</p>
-            <form action="/api/public/visits" method="post" className="mt-6 space-y-4">
-              <input required name="name" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2" placeholder="Nom" />
-              <input required name="phone" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2" placeholder="Téléphone" />
-              <input type="email" name="email" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2" placeholder="Courriel" />
-              <input required type="datetime-local" name="startsAt" className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2" />
-              <textarea name="notes" className="min-h-24 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2" placeholder="Informations complémentaires" />
-              <input type="hidden" name="propertyId" value={fallbackItem.id} />
-              <button className="w-full rounded-full bg-emerald-500 px-4 py-3 font-medium text-slate-950" type="submit">Envoyer la demande</button>
-            </form>
+            <VisitRequestForm propertyId={fallbackItem.id} />
           </aside>
         </div>
       </div>

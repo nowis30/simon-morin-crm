@@ -41,6 +41,8 @@ const baseProperty = {
   lastVerificationDate: null,
   status: PropertyStatus.AVAILABLE,
   archivedAt: null,
+  buildingId: null,
+  rentalUnitId: null,
   createdAt: new Date("2026-07-01T00:00:00.000Z"),
   updatedAt: new Date("2026-07-28T12:00:00.000Z"),
   photos: [{ id: "photo-1", propertyId: "property-1", url: "https://example.com/photo.jpg", sortOrder: 0, description: null, createdAt: new Date(), updatedAt: new Date() }],

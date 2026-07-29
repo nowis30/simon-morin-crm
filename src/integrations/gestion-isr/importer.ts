@@ -12,6 +12,23 @@ export type GestionIsrListing = {
   descriptionFr: string;
   listingUrl?: string;
   photoUrls: string[];
+  sourceId?: string;
+  buildingId?: string;
+  unitId?: string;
+  sourceStatus?: string;
+  statusLabel?: string;
+  unitNumber?: string;
+  floor?: string;
+  availableFrom?: string;
+  petsAllowed?: boolean;
+  petsDetails?: string;
+  parkingCount?: number;
+  parkingDetails?: string;
+  washerDryer?: boolean;
+  storage?: boolean;
+  airConditioning?: boolean;
+  inclusions?: string;
+  rawRecord?: GestionIsrSupabaseRecord;
 };
 
 export type GestionIsrManagedProperty = {
@@ -20,7 +37,7 @@ export type GestionIsrManagedProperty = {
   status: string;
 };
 
-type GestionIsrSupabaseUnit = {
+export type GestionIsrSupabaseUnit = {
   id?: string;
   numero?: string;
   prix?: number;
@@ -40,7 +57,7 @@ type GestionIsrSupabaseUnit = {
   };
 };
 
-type GestionIsrSupabaseRecord = {
+export type GestionIsrSupabaseRecord = {
   pk?: string;
   id?: string;
   titre?: string;
@@ -188,6 +205,56 @@ function discoverSupabaseConfig(html: string) {
   return { supabaseUrl, supabaseAnon };
 }
 
+export function normalizeGestionIsrUnitStatus(rawStatus?: string) {
+  const normalized = (rawStatus || "").trim();
+  const lower = normalized.toLowerCase();
+  if (!normalized) {
+    return {
+      normalizedStatus: "TO_VERIFY" as const,
+      originalLabel: "",
+      isPublishable: false,
+      recommendedAction: "REVIEW",
+    };
+  }
+  if (lower.includes("dispon") || lower.includes("available")) {
+    return { normalizedStatus: "AVAILABLE" as const, originalLabel: normalized, isPublishable: true, recommendedAction: "PUBLISH" };
+  }
+  if (lower.includes("visite") || lower.includes("visit")) {
+    return { normalizedStatus: "VISIT_SCHEDULED" as const, originalLabel: normalized, isPublishable: false, recommendedAction: "HIDE_FROM_LIST" };
+  }
+  if (lower.includes("reserve") || lower.includes("reserved")) {
+    return { normalizedStatus: "RESERVED" as const, originalLabel: normalized, isPublishable: false, recommendedAction: "HIDE_FROM_LIST" };
+  }
+  if (lower.includes("lou") || lower.includes("rented") || lower.includes("occup")) {
+    return { normalizedStatus: "RENTED" as const, originalLabel: normalized, isPublishable: false, recommendedAction: "HIDE" };
+  }
+  if (lower.includes("retir") || lower.includes("inact") || lower.includes("inactive")) {
+    return { normalizedStatus: "REMOVED" as const, originalLabel: normalized, isPublishable: false, recommendedAction: "HIDE" };
+  }
+  return { normalizedStatus: "TO_VERIFY" as const, originalLabel: normalized, isPublishable: false, recommendedAction: "REVIEW" };
+}
+
+function normalizeStatus(rawStatus?: string) {
+  return normalizeGestionIsrUnitStatus(rawStatus).normalizedStatus;
+}
+
+function shouldKeepUnit(unit: GestionIsrSupabaseUnit | undefined, record: GestionIsrSupabaseRecord) {
+  const rawStatus = String(unit?.statut ?? record.titre ?? "").trim();
+  const normalizedStatus = normalizeStatus(rawStatus);
+  if (normalizedStatus === "RENTED" || normalizedStatus === "REMOVED") {
+    return false;
+  }
+  return true;
+}
+
+function pickStableIdentity(record: GestionIsrSupabaseRecord, unit?: GestionIsrSupabaseUnit) {
+  const buildingId = record.id_app || record.pk || record.id || null;
+  const unitId = unit?.id || unit?.numero || unit?.etage || null;
+  const seed = [buildingId, unitId, unit?.numero, record.titre].filter(Boolean).join("|");
+  const hash = crypto.createHash("sha1").update(seed || JSON.stringify(record)).digest("hex").slice(0, 12).toUpperCase();
+  return { buildingId, unitId, stableSeed: seed || hash, hash };
+}
+
 export function normalizeGestionIsrSupabaseListings(records: GestionIsrSupabaseRecord[], sourceUrl: string): GestionIsrListing[] {
   const listings: GestionIsrListing[] = [];
 
@@ -201,42 +268,50 @@ export function normalizeGestionIsrSupabaseListings(records: GestionIsrSupabaseR
     const baseDistrict = clean(record.secteur) || "";
     const baseDescription = clean(record.description) || "Description a verifier";
 
-    const availableUnits = (record.units ?? []).filter((unit) => String(unit.statut ?? "").toLowerCase().includes("dispon"));
+    const units = record.units ?? [];
+    const normalizedUnits = units.length > 0 ? units : [undefined];
+    const relevantUnits = normalizedUnits.filter((unit) => shouldKeepUnit(unit, record));
+    const chosenUnits = relevantUnits.length > 0 ? relevantUnits : [undefined];
 
-    if (availableUnits.length > 0) {
-      for (const unit of availableUnits) {
-        const titleSeed = `${record.id_app || record.pk || record.id || baseAddress}-${unit.id || unit.numero || unit.etage || unit.type || 'unit'}`;
-        const address = parseAddressFromText(unit.carac?.rue || baseAddress);
-        const description = clean(unit.caract) || baseDescription;
-        listings.push({
-          codeIsr: parseCode(titleSeed, titleSeed),
-          address: unit.numero ? `${address} #${clean(unit.numero)}` : address,
-          city: baseCity,
-          district: baseDistrict,
-          monthlyPrice: Number(unit.prix || record.loyer || 0),
-          bedrooms: Number(unit.chambres ?? parseBedrooms(unit.type || record.grandeur || description)),
-          propertyType: clean(unit.type || record.grandeur || "Appartement"),
-          descriptionFr: description,
-          listingUrl: sourceUrl,
-          photoUrls: sharedPhotos,
-        });
-      }
-      continue;
+    for (const unit of chosenUnits) {
+      const identity = pickStableIdentity(record, unit);
+      const address = parseAddressFromText(unit?.carac?.rue || baseAddress);
+      const description = clean(unit?.caract) || baseDescription;
+      const rawStatus = String(unit?.statut ?? record.titre ?? "").trim();
+      const status = normalizeStatus(rawStatus);
+      const titleSeed = `${identity.buildingId || baseAddress}-${identity.unitId || unit?.numero || unit?.etage || "unit"}`;
+      const codeIsr = parseCode(titleSeed, titleSeed);
+
+      listings.push({
+        codeIsr,
+        address: unit?.numero ? `${address} #${clean(unit.numero)}` : address,
+        city: baseCity,
+        district: baseDistrict,
+        monthlyPrice: Number(unit?.prix || record.loyer || 0),
+        bedrooms: Number(unit?.chambres ?? parseBedrooms(unit?.type || record.grandeur || description)),
+        propertyType: clean(unit?.type || record.grandeur || "Appartement"),
+        descriptionFr: description,
+        listingUrl: sourceUrl,
+        photoUrls: sharedPhotos,
+        sourceId: identity.buildingId || undefined,
+        buildingId: identity.buildingId || undefined,
+        unitId: identity.unitId || undefined,
+        sourceStatus: rawStatus || undefined,
+        statusLabel: rawStatus || undefined,
+        unitNumber: unit?.numero || undefined,
+        floor: unit?.etage || undefined,
+        availableFrom: undefined,
+        petsAllowed: Boolean(unit?.carac?.animaux || record.animaux),
+        petsDetails: clean(unit?.carac?.animaux || record.animaux || "") || undefined,
+        parkingCount: unit?.stationnement ?? undefined,
+        parkingDetails: unit?.stationnement ? `${unit.stationnement} stationnement${unit.stationnement > 1 ? "s" : ""}` : undefined,
+        washerDryer: /laveuse|sécheuse|secheuse/i.test(description),
+        storage: /rangement|cabanon|dépôt|depot/i.test(description),
+        airConditioning: /clim|climatisation|thermopompe/i.test(description),
+        inclusions: clean(unit?.carac?.extras?.join(", ") || record.description || "") || undefined,
+        rawRecord: record,
+      });
     }
-
-    const codeSeed = `${record.id_app || record.pk || record.id || baseAddress}-${record.titre || "listing"}`;
-    listings.push({
-      codeIsr: parseCode(codeSeed, codeSeed),
-      address: baseAddress,
-      city: baseCity,
-      district: baseDistrict,
-      monthlyPrice: Number(record.loyer || 0),
-      bedrooms: parseBedrooms(record.grandeur || baseDescription),
-      propertyType: clean(record.grandeur || "Appartement"),
-      descriptionFr: baseDescription,
-      listingUrl: sourceUrl,
-      photoUrls: sharedPhotos,
-    });
   }
 
   const uniqueByCode = new Map<string, GestionIsrListing>();
@@ -248,6 +323,40 @@ export function normalizeGestionIsrSupabaseListings(records: GestionIsrSupabaseR
   }
 
   return Array.from(uniqueByCode.values());
+}
+
+export async function fetchGestionIsrRawRecords(sourceUrl: string) {
+  const response = await fetch(sourceUrl, {
+    headers: {
+      "User-Agent": "SimonMorinAgentLocation/1.0 (+local-import)",
+      Accept: "text/html,application/xhtml+xml",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Import Gestion ISR impossible (${response.status})`);
+  }
+
+  const html = await response.text();
+  const config = discoverSupabaseConfig(html);
+  if (!config) {
+    return null;
+  }
+
+  const supabaseResponse = await fetch(`${config.supabaseUrl}/rest/v1/listings?select=*&statut=eq.Actif`, {
+    headers: {
+      apikey: config.supabaseAnon,
+      Authorization: `Bearer ${config.supabaseAnon}`,
+      Accept: "application/json",
+    },
+  });
+
+  if (!supabaseResponse.ok) {
+    throw new Error(`Source Supabase ISR inaccessible (${supabaseResponse.status})`);
+  }
+
+  const data = (await supabaseResponse.json()) as GestionIsrSupabaseRecord[];
+  return data[0] ?? null;
 }
 
 async function fetchGestionIsrSupabaseListings(sourceUrl: string, html: string) {

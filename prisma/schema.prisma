@@ -99,55 +99,59 @@ enum GroupPublicationStatus {
 }
 
 model User {
-  id           String     @id @default(cuid())
-  email        String     @unique
-  name         String
-  passwordHash String
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  auditLogs    AuditLog[]
-  interactions ProspectInteraction[]
-  googleCalendarConnection GoogleCalendarConnection?
-  metaConnection        MetaConnection?
+  id                        String                     @id @default(cuid())
+  email                     String                     @unique
+  name                      String
+  passwordHash              String
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  auditLogs                 AuditLog[]
+  interactions              ProspectInteraction[]
+  googleCalendarConnection  GoogleCalendarConnection?
+  metaConnection            MetaConnection?
   visitAvailabilitySettings VisitAvailabilitySettings?
-  blockedVisitPeriods VisitBlockedPeriod[]
-  approvedAdvertisements Advertisement[] @relation("ApprovedByUser")
-  publishedAdvertisements Advertisement[] @relation("PublishedByUser")
+  blockedVisitPeriods       VisitBlockedPeriod[]
+  approvedAdvertisements    Advertisement[]            @relation("ApprovedByUser")
+  publishedAdvertisements   Advertisement[]            @relation("PublishedByUser")
 
   @@index([createdAt])
 }
 
 model Property {
-  id                     String                 @id @default(cuid())
-  codeIsr                String                 @unique
-  address                String
-  city                   String
-  district               String?
-  monthlyPrice           Int
-  propertyType           String
-  bedrooms               Int
-  availableFrom          DateTime?
-  petsAllowed            Boolean                @default(false)
-  petsDetails            String?
-  parking                Boolean                @default(false)
-  inclusions             String?
-  descriptionFr          String
-  descriptionEn          String
-  gestionIsrUrl          String?
-  marketplaceUrl         String?
-  facebookPostUrl        String?
-  marketingPriority      Int                    @default(3)
-  lastVerificationDate   DateTime?
-  status                 PropertyStatus         @default(AVAILABLE)
-  archivedAt             DateTime?
-  createdAt              DateTime               @default(now())
-  updatedAt              DateTime               @updatedAt
-  photos                 PropertyPhoto[]
-  visits                 Visit[]
-  placements             Placement[]
-  advertisements         Advertisement[]
-  prospectMatches        ProspectPropertyMatch[]
-  sourceProspects        Prospect[]             @relation("FirstContactProperty")
+  id                   String                  @id @default(cuid())
+  codeIsr              String                  @unique
+  address              String
+  city                 String
+  district             String?
+  monthlyPrice         Int
+  propertyType         String
+  bedrooms             Int
+  availableFrom        DateTime?
+  petsAllowed          Boolean                 @default(false)
+  petsDetails          String?
+  parking              Boolean                 @default(false)
+  inclusions           String?
+  descriptionFr        String
+  descriptionEn        String
+  gestionIsrUrl        String?
+  marketplaceUrl       String?
+  facebookPostUrl      String?
+  marketingPriority    Int                     @default(3)
+  lastVerificationDate DateTime?
+  status               PropertyStatus          @default(AVAILABLE)
+  archivedAt           DateTime?
+  buildingId           String?
+  rentalUnitId         String?
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+  photos               PropertyPhoto[]
+  visits               Visit[]
+  placements           Placement[]
+  advertisements       Advertisement[]
+  prospectMatches      ProspectPropertyMatch[]
+  sourceProspects      Prospect[]              @relation("FirstContactProperty")
+  building             Building?               @relation(fields: [buildingId], references: [id], onDelete: SetNull)
+  rentalUnit           RentalUnit?             @relation(fields: [rentalUnitId], references: [id], onDelete: SetNull)
 
   @@index([city, status])
   @@index([monthlyPrice])
@@ -155,371 +159,441 @@ model Property {
 }
 
 model PropertyPhoto {
-  id          String   @id @default(cuid())
-  propertyId  String
-  url         String
-  sortOrder   Int      @default(0)
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  id                      String                       @id @default(cuid())
+  propertyId              String
+  url                     String
+  sortOrder               Int                          @default(0)
+  description             String?
+  createdAt               DateTime                     @default(now())
+  updatedAt               DateTime                     @updatedAt
+  property                Property                     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   advertisementSelections AdvertisementSelectedPhoto[]
 
   @@index([propertyId, sortOrder])
 }
 
+model Building {
+  id            String          @id @default(cuid())
+  codeIsr       String          @unique
+  name          String?
+  address       String
+  city          String
+  district      String?
+  description   String?
+  gestionIsrUrl String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  photos        BuildingPhoto[]
+  rentalUnits   RentalUnit[]
+  properties    Property[]
+
+  @@index([city])
+}
+
+model BuildingPhoto {
+  id          String   @id @default(cuid())
+  buildingId  String
+  url         String
+  sortOrder   Int      @default(0)
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  building    Building @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+
+  @@index([buildingId, sortOrder])
+}
+
+model RentalUnit {
+  id            String            @id @default(cuid())
+  codeIsr       String            @unique
+  buildingId    String
+  unitNumber    String?
+  floor         String?
+  monthlyPrice  Int
+  bedrooms      Int
+  propertyType  String
+  description   String
+  status        PropertyStatus    @default(AVAILABLE)
+  petsAllowed   Boolean           @default(false)
+  petsDetails   String?
+  parking       Boolean           @default(false)
+  inclusions    String?
+  availableFrom DateTime?
+  gestionIsrUrl String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  building      Building          @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  photos        RentalUnitPhoto[]
+  properties    Property[]
+
+  @@index([buildingId, status])
+}
+
+model RentalUnitPhoto {
+  id           String     @id @default(cuid())
+  rentalUnitId String
+  url          String
+  sortOrder    Int        @default(0)
+  description  String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  rentalUnit   RentalUnit @relation(fields: [rentalUnitId], references: [id], onDelete: Cascade)
+
+  @@index([rentalUnitId, sortOrder])
+}
+
 model Prospect {
-  id                       String                 @id @default(cuid())
-  name                     String
-  phone                    String
-  email                    String?
-  messengerUrl             String?
-  preferredLanguage        String                 @default("fr")
-  maxBudget                Int?
-  preferredDistricts       String[]
-  bedroomsNeeded           Int?
-  moveInDate               DateTime?
-  hasPets                  Boolean                @default(false)
-  needsParking             Boolean                @default(false)
-  jobTitle                 String?
-  firstContactPropertyId   String?
-  nextFollowUpAt           DateTime?
-  notes                    String?
-  status                   ProspectStatus         @default(NEW)
-  createdAt                DateTime               @default(now())
-  updatedAt                DateTime               @updatedAt
-  lastContactAt            DateTime?
-  firstContactProperty     Property?              @relation("FirstContactProperty", fields: [firstContactPropertyId], references: [id])
-  interactions             ProspectInteraction[]
-  matches                  ProspectPropertyMatch[]
-  visits                   Visit[]
-  placements               Placement[]
+  id                     String                  @id @default(cuid())
+  name                   String
+  phone                  String
+  email                  String?
+  messengerUrl           String?
+  preferredLanguage      String                  @default("fr")
+  maxBudget              Int?
+  preferredDistricts     String[]
+  bedroomsNeeded         Int?
+  moveInDate             DateTime?
+  hasPets                Boolean                 @default(false)
+  needsParking           Boolean                 @default(false)
+  jobTitle               String?
+  firstContactPropertyId String?
+  nextFollowUpAt         DateTime?
+  notes                  String?
+  status                 ProspectStatus          @default(NEW)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  lastContactAt          DateTime?
+  firstContactProperty   Property?               @relation("FirstContactProperty", fields: [firstContactPropertyId], references: [id])
+  interactions           ProspectInteraction[]
+  matches                ProspectPropertyMatch[]
+  visits                 Visit[]
+  placements             Placement[]
 
   @@index([status])
   @@index([nextFollowUpAt])
 }
 
 model ProspectInteraction {
-  id          String            @id @default(cuid())
-  prospectId  String
-  userId      String?
-  at          DateTime          @default(now())
-  type        CommunicationType
-  summary     String
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  prospect    Prospect          @relation(fields: [prospectId], references: [id], onDelete: Cascade)
-  user        User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id         String            @id @default(cuid())
+  prospectId String
+  userId     String?
+  at         DateTime          @default(now())
+  type       CommunicationType
+  summary    String
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  prospect   Prospect          @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  user       User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([prospectId, at])
 }
 
 model ProspectPropertyMatch {
-  id                  String    @id @default(cuid())
-  prospectId          String
-  propertyId          String
-  score               Int
-  budgetCompatible    Boolean
-  districtCompatible  Boolean
-  bedroomsCompatible  Boolean
-  dateCompatible      Boolean
-  petsCompatible      Boolean
-  parkingCompatible   Boolean
-  reasons             String[]
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  prospect            Prospect  @relation(fields: [prospectId], references: [id], onDelete: Cascade)
-  property            Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  id                 String   @id @default(cuid())
+  prospectId         String
+  propertyId         String
+  score              Int
+  budgetCompatible   Boolean
+  districtCompatible Boolean
+  bedroomsCompatible Boolean
+  dateCompatible     Boolean
+  petsCompatible     Boolean
+  parkingCompatible  Boolean
+  reasons            String[]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  prospect           Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  property           Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@unique([prospectId, propertyId])
   @@index([prospectId, score])
 }
 
 model Visit {
-  id               String     @id @default(cuid())
-  prospectId       String
-  propertyId       String
-  startsAt         DateTime
-  endsAt           DateTime
-  bufferMinutes    Int        @default(30)
-  minimumLeadHours Int        @default(2)
-  requestedAt      DateTime   @default(now())
-  approvedAt       DateTime?
-  refusedAt        DateTime?
-  cancelledAt      DateTime?
-  completedAt      DateTime?
-  noShowAt         DateTime?
-  notes            String?
-  internalNotes    String?
-  googleEventId    String?
+  id                  String      @id @default(cuid())
+  prospectId          String
+  propertyId          String
+  startsAt            DateTime
+  endsAt              DateTime
+  bufferMinutes       Int         @default(30)
+  minimumLeadHours    Int         @default(2)
+  requestedAt         DateTime    @default(now())
+  approvedAt          DateTime?
+  refusedAt           DateTime?
+  cancelledAt         DateTime?
+  completedAt         DateTime?
+  noShowAt            DateTime?
+  notes               String?
+  internalNotes       String?
+  googleEventId       String?
   googleEventHtmlLink String?
-  googleSyncStatus String?
-  idempotencyKey   String?
-  status           VisitStatus @default(PENDING_APPROVAL)
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
-  prospect         Prospect   @relation(fields: [prospectId], references: [id], onDelete: Cascade)
-  property         Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  placements       Placement[]
+  googleSyncStatus    String?
+  idempotencyKey      String?
+  status              VisitStatus @default(PENDING_APPROVAL)
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  prospect            Prospect    @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  property            Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  placements          Placement[]
 
-  @@index([startsAt, status])
-  @@index([prospectId])
-  @@index([propertyId])
   @@unique([prospectId, propertyId, startsAt])
   @@unique([idempotencyKey])
   @@unique([googleEventId])
+  @@index([startsAt, status])
+  @@index([prospectId])
+  @@index([propertyId])
 }
 
 model GoogleCalendarConnection {
-  id                   String   @id @default(cuid())
-  userId               String   @unique
-  googleAccountEmail   String?
-  calendarId           String
-  accessTokenEncrypted String
+  id                    String    @id @default(cuid())
+  userId                String    @unique
+  googleAccountEmail    String?
+  calendarId            String
+  accessTokenEncrypted  String
   refreshTokenEncrypted String
-  accessTokenExpiresAt DateTime
-  scopes               String[]
-  connectedAt          DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-  lastSyncAt           DateTime?
-  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessTokenExpiresAt  DateTime
+  scopes                String[]
+  connectedAt           DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  lastSyncAt            DateTime?
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([updatedAt])
 }
 
 model VisitAvailabilitySettings {
-  id                    String   @id @default(cuid())
-  userId                String   @unique
-  timeZone              String   @default("America/Toronto")
-  visitDurationMinutes  Int      @default(30)
-  bufferMinutes         Int      @default(30)
-  minLeadHours          Int      @default(2)
-  maxVisitsPerEvening   Int      @default(4)
-  weekSchedule          Json
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  timeZone             String   @default("America/Toronto")
+  visitDurationMinutes Int      @default(30)
+  bufferMinutes        Int      @default(30)
+  minLeadHours         Int      @default(2)
+  maxVisitsPerEvening  Int      @default(4)
+  weekSchedule         Json
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([updatedAt])
 }
 
 model VisitBlockedPeriod {
-  id          String   @id @default(cuid())
-  userId      String
-  startsAt    DateTime
-  endsAt      DateTime
-  reason      String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  userId    String
+  startsAt  DateTime
+  endsAt    DateTime
+  reason    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, startsAt, endsAt])
 }
 
 model Placement {
-  id                        String      @id @default(cuid())
-  prospectId                String
-  propertyId                String
-  visitId                   String?
-  visitDate                 DateTime?
-  sentToColleaguesDate      DateTime?
-  acceptanceDate            DateTime?
-  signatureDate             DateTime?
-  moveInDate                DateTime?
-  notes                     String?
-  createdAt                 DateTime    @default(now())
-  updatedAt                 DateTime    @updatedAt
-  prospect                  Prospect    @relation(fields: [prospectId], references: [id], onDelete: Cascade)
-  property                  Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  visit                     Visit?      @relation(fields: [visitId], references: [id], onDelete: SetNull)
-  commission                Commission?
+  id                   String      @id @default(cuid())
+  prospectId           String
+  propertyId           String
+  visitId              String?
+  visitDate            DateTime?
+  sentToColleaguesDate DateTime?
+  acceptanceDate       DateTime?
+  signatureDate        DateTime?
+  moveInDate           DateTime?
+  notes                String?
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  prospect             Prospect    @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  property             Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  visit                Visit?      @relation(fields: [visitId], references: [id], onDelete: SetNull)
+  commission           Commission?
 
   @@index([moveInDate])
 }
 
 model Commission {
-  id                  String           @id @default(cuid())
-  placementId         String           @unique
-  plannedAmount       Int              @default(500)
-  invoicedAmount      Int?
-  receivedAmount      Int?
-  invoiceNumber       String?
-  status              CommissionStatus @default(PLANNED)
-  billedAt            DateTime?
-  receivedAt          DateTime?
-  notes               String?
-  createdAt           DateTime         @default(now())
-  updatedAt           DateTime         @updatedAt
-  placement           Placement        @relation(fields: [placementId], references: [id], onDelete: Cascade)
+  id             String           @id @default(cuid())
+  placementId    String           @unique
+  plannedAmount  Int              @default(500)
+  invoicedAmount Int?
+  receivedAmount Int?
+  invoiceNumber  String?
+  status         CommissionStatus @default(PLANNED)
+  billedAt       DateTime?
+  receivedAt     DateTime?
+  notes          String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  placement      Placement        @relation(fields: [placementId], references: [id], onDelete: Cascade)
 
   @@index([status])
   @@index([createdAt])
 }
 
 model Advertisement {
-  id                  String               @id @default(cuid())
-  propertyId          String?
-  type                AdType
-  language            AdLanguage
-  title               String
-  body                String
-  status              AdvertisementStatus  @default(DRAFT)
-  generatedAutomatically Boolean           @default(true)
-  manuallyEdited      Boolean              @default(false)
-  generatedAt         DateTime?
+  id                      String                       @id @default(cuid())
+  propertyId              String?
+  type                    AdType
+  language                AdLanguage
+  title                   String
+  body                    String
+  status                  AdvertisementStatus          @default(DRAFT)
+  generatedAutomatically  Boolean                      @default(true)
+  manuallyEdited          Boolean                      @default(false)
+  generatedAt             DateTime?
   sourcePropertyUpdatedAt DateTime?
-  generatorVersion    String?
-  publishedAt         DateTime?
-  publicationUrl      String?
-  messagesReceived    Int                  @default(0)
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  approvedAt          DateTime?
-  approvedByUserId    String?
-  approvalNotes       String?
-  requiresManualAction Boolean             @default(false)
-  approvalWarnings    String[]
-  latestErrorMessage  String?
-  externalPublicationId String?
-  publicationChannel  PublicationChannel?
-  publishedByUserId   String?
-  idempotencyKey      String?
-  contentFingerprint  String?
-  property            Property?            @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  approvedByUser      User?                @relation("ApprovedByUser", fields: [approvedByUserId], references: [id], onDelete: SetNull)
-  publishedByUser     User?                @relation("PublishedByUser", fields: [publishedByUserId], references: [id], onDelete: SetNull)
-  versions            AdvertisementVersion[]
-  selectedPhotos      AdvertisementSelectedPhoto[]
-  publications        AdvertisementPublication[]
-  groupPublications   FacebookGroupPublication[]
+  generatorVersion        String?
+  publishedAt             DateTime?
+  publicationUrl          String?
+  messagesReceived        Int                          @default(0)
+  createdAt               DateTime                     @default(now())
+  updatedAt               DateTime                     @updatedAt
+  approvedAt              DateTime?
+  approvedByUserId        String?
+  approvalNotes           String?
+  requiresManualAction    Boolean                      @default(false)
+  approvalWarnings        String[]
+  latestErrorMessage      String?
+  externalPublicationId   String?
+  publicationChannel      PublicationChannel?
+  publishedByUserId       String?
+  idempotencyKey          String?
+  contentFingerprint      String?
+  property                Property?                    @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  approvedByUser          User?                        @relation("ApprovedByUser", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  publishedByUser         User?                        @relation("PublishedByUser", fields: [publishedByUserId], references: [id], onDelete: SetNull)
+  versions                AdvertisementVersion[]
+  selectedPhotos          AdvertisementSelectedPhoto[]
+  publications            AdvertisementPublication[]
+  groupPublications       FacebookGroupPublication[]
 
-  @@index([status, publishedAt])
   @@unique([propertyId, type, language])
   @@unique([idempotencyKey])
+  @@index([status, publishedAt])
 }
 
 model AdvertisementSelectedPhoto {
-  id               String             @id @default(cuid())
-  advertisementId  String
-  propertyPhotoId  String
-  channel          PublicationChannel
-  sortOrder        Int                @default(0)
-  isPrimary        Boolean            @default(false)
-  excluded         Boolean            @default(false)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  advertisement    Advertisement      @relation(fields: [advertisementId], references: [id], onDelete: Cascade)
-  propertyPhoto    PropertyPhoto      @relation(fields: [propertyPhotoId], references: [id], onDelete: Cascade)
+  id              String             @id @default(cuid())
+  advertisementId String
+  propertyPhotoId String
+  channel         PublicationChannel
+  sortOrder       Int                @default(0)
+  isPrimary       Boolean            @default(false)
+  excluded        Boolean            @default(false)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  advertisement   Advertisement      @relation(fields: [advertisementId], references: [id], onDelete: Cascade)
+  propertyPhoto   PropertyPhoto      @relation(fields: [propertyPhotoId], references: [id], onDelete: Cascade)
 
   @@unique([advertisementId, propertyPhotoId, channel])
   @@index([advertisementId, channel, sortOrder])
 }
 
 model AdvertisementPublication {
-  id                  String               @id @default(cuid())
-  advertisementId     String
-  channel             PublicationChannel
-  destination         String?
-  status              AdvertisementStatus  @default(DRAFT)
-  externalId          String?
-  publicationUrl      String?
-  idempotencyKey      String?
-  errorMessage        String?
-  checklist           Json?
-  messagesReceived    Int                  @default(0)
-  prospectsCount      Int                  @default(0)
-  visitsCount         Int                  @default(0)
-  placementsCount     Int                  @default(0)
-  commissionAmount    Int                  @default(0)
-  publishedAt         DateTime?
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  advertisement       Advertisement        @relation(fields: [advertisementId], references: [id], onDelete: Cascade)
+  id               String              @id @default(cuid())
+  advertisementId  String
+  channel          PublicationChannel
+  destination      String?
+  status           AdvertisementStatus @default(DRAFT)
+  externalId       String?
+  publicationUrl   String?
+  idempotencyKey   String?
+  errorMessage     String?
+  checklist        Json?
+  messagesReceived Int                 @default(0)
+  prospectsCount   Int                 @default(0)
+  visitsCount      Int                 @default(0)
+  placementsCount  Int                 @default(0)
+  commissionAmount Int                 @default(0)
+  publishedAt      DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  advertisement    Advertisement       @relation(fields: [advertisementId], references: [id], onDelete: Cascade)
 
-  @@index([advertisementId, channel])
   @@unique([idempotencyKey])
+  @@index([advertisementId, channel])
 }
 
 model MetaConnection {
-  id                       String   @id @default(cuid())
-  userId                   String   @unique
+  id                       String    @id @default(cuid())
+  userId                   String    @unique
   pageId                   String
   pageName                 String?
   pageAccessTokenEncrypted String
   userAccessTokenEncrypted String?
   scopes                   String[]
-  connectedAt              DateTime @default(now())
-  updatedAt                DateTime @updatedAt
+  connectedAt              DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
   lastSyncAt               DateTime?
   revokedAt                DateTime?
-  user                     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([updatedAt])
 }
 
 model FacebookGroup {
-  id                 String   @id @default(cuid())
+  id                 String                     @id @default(cuid())
   name               String
   link               String
   city               String?
   sectors            String[]
   language           String?
-  active             Boolean  @default(true)
-  isMember           Boolean  @default(false)
-  isAdminOrModerator Boolean  @default(false)
+  active             Boolean                    @default(true)
+  isMember           Boolean                    @default(false)
+  isAdminOrModerator Boolean                    @default(false)
   rules              String?
   notes              String?
   lastPublishedAt    DateTime?
-  minDelayHours      Int      @default(24)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  minDelayHours      Int                        @default(24)
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @updatedAt
   publications       FacebookGroupPublication[]
 
   @@index([active, city])
 }
 
 model FacebookGroupPublication {
-  id               String                @id @default(cuid())
-  advertisementId  String
-  groupId          String
-  customText       String?
-  publicationUrl   String?
-  status           GroupPublicationStatus @default(PENDING)
-  warningMessages  String[]
-  externalId       String?
-  publishedAt      DateTime?
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
-  advertisement    Advertisement         @relation(fields: [advertisementId], references: [id], onDelete: Cascade)
-  group            FacebookGroup         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  id              String                 @id @default(cuid())
+  advertisementId String
+  groupId         String
+  customText      String?
+  publicationUrl  String?
+  status          GroupPublicationStatus @default(PENDING)
+  warningMessages String[]
+  externalId      String?
+  publishedAt     DateTime?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  advertisement   Advertisement          @relation(fields: [advertisementId], references: [id], onDelete: Cascade)
+  group           FacebookGroup          @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@unique([advertisementId, groupId])
   @@index([status, publishedAt])
 }
 
 model AdvertisementVersion {
-  id               String         @id @default(cuid())
-  advertisementId  String
-  type             AdType
-  language         AdLanguage
-  title            String
-  body             String
-  changeSource     String?
-  createdAt        DateTime       @default(now())
-  advertisement    Advertisement  @relation(fields: [advertisementId], references: [id], onDelete: Cascade)
+  id              String        @id @default(cuid())
+  advertisementId String
+  type            AdType
+  language        AdLanguage
+  title           String
+  body            String
+  changeSource    String?
+  createdAt       DateTime      @default(now())
+  advertisement   Advertisement @relation(fields: [advertisementId], references: [id], onDelete: Cascade)
 
   @@index([advertisementId, createdAt])
 }
 
 model AuditLog {
-  id          String   @id @default(cuid())
-  userId      String?
-  entity      String
-  entityId    String
-  action      String
-  metadata    Json?
-  createdAt   DateTime @default(now())
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id        String   @id @default(cuid())
+  userId    String?
+  entity    String
+  entityId  String
+  action    String
+  metadata  Json?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([entity, entityId])
   @@index([createdAt])

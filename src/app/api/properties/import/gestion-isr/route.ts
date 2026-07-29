@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+import { PropertyStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { writeAuditLog } from "@/lib/audit";
 import { validateCsrfToken } from "@/lib/csrf";
@@ -8,10 +10,17 @@ import { buildSyncComparisonReport, buildSyncSnapshot, getCodesToFlagAsVerify } 
 import {
   fetchGestionIsrListings,
   inferGestionIsrMetadata,
+  normalizeGestionIsrUnitStatus,
   selectGestionIsrCodesToRemove,
 } from "@/integrations/gestion-isr/importer";
 
 const DEFAULT_GESTION_ISR_URL = "https://location.gestion-isr.com/";
+
+function buildEntityCode(prefix: string, seed: string) {
+  const normalizedSeed = seed.replace(/[^a-zA-Z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  const hash = createHash("sha1").update(seed).digest("hex").slice(0, 8).toUpperCase();
+  return `${prefix}-${normalizedSeed || hash}`;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -55,62 +64,154 @@ export async function POST(request: NextRequest) {
 
     for (const listing of listings) {
       const metadata = inferGestionIsrMetadata(listing.descriptionFr);
+      const statusInfo = normalizeGestionIsrUnitStatus(listing.sourceStatus || listing.statusLabel);
       const alreadyExists = await prisma.property.findUnique({
         where: { codeIsr: listing.codeIsr },
         select: { id: true },
       });
 
-      const item = await prisma.property.upsert({
-        where: { codeIsr: listing.codeIsr },
-        update: {
-          address: cleanText(listing.address),
-          city: cleanText(listing.city),
-          district: cleanText(listing.district) || null,
-          monthlyPrice: listing.monthlyPrice,
-          propertyType: cleanText(listing.propertyType),
-          bedrooms: listing.bedrooms,
-          petsAllowed: metadata.petsAllowed,
-          petsDetails: cleanText(metadata.petsDetails) || null,
-          parking: metadata.parking,
-          inclusions: cleanText(metadata.inclusions) || null,
-          descriptionFr: cleanText(listing.descriptionFr),
-          descriptionEn: "English description pending translation",
-          gestionIsrUrl: listing.listingUrl || sourceUrl,
-          status: "AVAILABLE",
-          lastVerificationDate: new Date(),
-          archivedAt: null,
-        },
-        create: {
-          codeIsr: listing.codeIsr,
-          address: cleanText(listing.address),
-          city: cleanText(listing.city),
-          district: cleanText(listing.district) || null,
-          monthlyPrice: listing.monthlyPrice,
-          propertyType: cleanText(listing.propertyType),
-          bedrooms: listing.bedrooms,
-          petsAllowed: metadata.petsAllowed,
-          petsDetails: cleanText(metadata.petsDetails) || null,
-          parking: metadata.parking,
-          inclusions: cleanText(metadata.inclusions) || null,
-          descriptionFr: cleanText(listing.descriptionFr),
-          descriptionEn: "English description pending translation",
-          gestionIsrUrl: listing.listingUrl || sourceUrl,
-          status: "AVAILABLE",
-          lastVerificationDate: new Date(),
-        },
-      });
+      const item = await prisma.$transaction(async (tx) => {
+        const buildingCode = buildEntityCode("BLDG", listing.buildingId || listing.sourceId || listing.codeIsr);
+        const unitCode = buildEntityCode("UNIT", listing.unitId || listing.codeIsr);
 
-      await prisma.propertyPhoto.deleteMany({ where: { propertyId: item.id } });
-      if (listing.photoUrls.length > 0) {
-        await prisma.propertyPhoto.createMany({
-          data: listing.photoUrls.map((url, index) => ({
-            propertyId: item.id,
-            url,
-            sortOrder: index,
-            description: "Photo importee Gestion ISR",
-          })),
+        const building = await tx.building.upsert({
+          where: { codeIsr: buildingCode },
+          update: {
+            address: cleanText(listing.address),
+            city: cleanText(listing.city),
+            district: cleanText(listing.district) || null,
+            description: cleanText(listing.descriptionFr).slice(0, 2000) || null,
+            gestionIsrUrl: listing.listingUrl || sourceUrl,
+          },
+          create: {
+            codeIsr: buildingCode,
+            address: cleanText(listing.address),
+            city: cleanText(listing.city),
+            district: cleanText(listing.district) || null,
+            description: cleanText(listing.descriptionFr).slice(0, 2000) || null,
+            gestionIsrUrl: listing.listingUrl || sourceUrl,
+          },
         });
-      }
+
+        const rentalUnit = await tx.rentalUnit.upsert({
+          where: { codeIsr: unitCode },
+          update: {
+            buildingId: building.id,
+            unitNumber: cleanText(listing.unitNumber) || null,
+            floor: cleanText(listing.floor) || null,
+            monthlyPrice: listing.monthlyPrice,
+            bedrooms: listing.bedrooms,
+            propertyType: cleanText(listing.propertyType),
+            description: cleanText(listing.descriptionFr).slice(0, 4000) || "",
+            status: statusInfo.normalizedStatus as PropertyStatus,
+            petsAllowed: metadata.petsAllowed,
+            petsDetails: cleanText(metadata.petsDetails) || null,
+            parking: metadata.parking,
+            inclusions: cleanText(metadata.inclusions) || null,
+            availableFrom: listing.availableFrom ? new Date(listing.availableFrom) : null,
+            gestionIsrUrl: listing.listingUrl || sourceUrl,
+          },
+          create: {
+            codeIsr: unitCode,
+            buildingId: building.id,
+            unitNumber: cleanText(listing.unitNumber) || null,
+            floor: cleanText(listing.floor) || null,
+            monthlyPrice: listing.monthlyPrice,
+            bedrooms: listing.bedrooms,
+            propertyType: cleanText(listing.propertyType),
+            description: cleanText(listing.descriptionFr).slice(0, 4000) || "",
+            status: statusInfo.normalizedStatus as PropertyStatus,
+            petsAllowed: metadata.petsAllowed,
+            petsDetails: cleanText(metadata.petsDetails) || null,
+            parking: metadata.parking,
+            inclusions: cleanText(metadata.inclusions) || null,
+            availableFrom: listing.availableFrom ? new Date(listing.availableFrom) : null,
+            gestionIsrUrl: listing.listingUrl || sourceUrl,
+          },
+        });
+
+        await tx.buildingPhoto.deleteMany({ where: { buildingId: building.id } });
+        if (listing.photoUrls.length > 0) {
+          await tx.buildingPhoto.createMany({
+            data: listing.photoUrls.map((url, index) => ({
+              buildingId: building.id,
+              url,
+              sortOrder: index,
+              description: "Photo importee Gestion ISR",
+            })),
+          });
+        }
+
+        await tx.rentalUnitPhoto.deleteMany({ where: { rentalUnitId: rentalUnit.id } });
+        if (listing.photoUrls.length > 0) {
+          await tx.rentalUnitPhoto.createMany({
+            data: listing.photoUrls.map((url, index) => ({
+              rentalUnitId: rentalUnit.id,
+              url,
+              sortOrder: index,
+              description: "Photo importee Gestion ISR",
+            })),
+          });
+        }
+
+        const property = await tx.property.upsert({
+          where: { codeIsr: listing.codeIsr },
+          update: {
+            address: cleanText(listing.address),
+            city: cleanText(listing.city),
+            district: cleanText(listing.district) || null,
+            monthlyPrice: listing.monthlyPrice,
+            propertyType: cleanText(listing.propertyType),
+            bedrooms: listing.bedrooms,
+            petsAllowed: metadata.petsAllowed,
+            petsDetails: cleanText(metadata.petsDetails) || null,
+            parking: metadata.parking,
+            inclusions: cleanText(metadata.inclusions) || null,
+            descriptionFr: cleanText(listing.descriptionFr),
+            descriptionEn: "English description pending translation",
+            gestionIsrUrl: listing.listingUrl || sourceUrl,
+            status: statusInfo.normalizedStatus as PropertyStatus,
+            buildingId: building.id,
+            rentalUnitId: rentalUnit.id,
+            lastVerificationDate: new Date(),
+            archivedAt: null,
+          },
+          create: {
+            codeIsr: listing.codeIsr,
+            address: cleanText(listing.address),
+            city: cleanText(listing.city),
+            district: cleanText(listing.district) || null,
+            monthlyPrice: listing.monthlyPrice,
+            propertyType: cleanText(listing.propertyType),
+            bedrooms: listing.bedrooms,
+            petsAllowed: metadata.petsAllowed,
+            petsDetails: cleanText(metadata.petsDetails) || null,
+            parking: metadata.parking,
+            inclusions: cleanText(metadata.inclusions) || null,
+            descriptionFr: cleanText(listing.descriptionFr),
+            descriptionEn: "English description pending translation",
+            gestionIsrUrl: listing.listingUrl || sourceUrl,
+            status: statusInfo.normalizedStatus as PropertyStatus,
+            buildingId: building.id,
+            rentalUnitId: rentalUnit.id,
+            lastVerificationDate: new Date(),
+          },
+        });
+
+        await tx.propertyPhoto.deleteMany({ where: { propertyId: property.id } });
+        if (listing.photoUrls.length > 0) {
+          await tx.propertyPhoto.createMany({
+            data: listing.photoUrls.map((url, index) => ({
+              propertyId: property.id,
+              url,
+              sortOrder: index,
+              description: "Photo importee Gestion ISR",
+            })),
+          });
+        }
+
+        return property.id;
+      });
 
       if (alreadyExists) {
         updated += 1;

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 describe("google calendar redirect resolution", () => {
   beforeEach(() => {
     vi.resetModules();
-    process.env.NODE_ENV = "development";
+    vi.stubEnv("NODE_ENV", "development");
     process.env.GOOGLE_CLIENT_ID = "client-id";
     process.env.GOOGLE_CLIENT_SECRET = "client-secret";
     process.env.GOOGLE_REDIRECT_URI = "https://simon-morin-agent-location.onrender.com/api/integrations/google/calendar/callback";

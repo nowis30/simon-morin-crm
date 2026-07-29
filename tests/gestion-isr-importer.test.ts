@@ -3,6 +3,7 @@ import {
   fetchGestionIsrListings,
   inferGestionIsrMetadata,
   normalizeGestionIsrSupabaseListings,
+  normalizeGestionIsrUnitStatus,
   selectGestionIsrCodesToRemove,
 } from "@/integrations/gestion-isr/importer";
 
@@ -152,5 +153,23 @@ describe("gestion-isr importer", () => {
     expect(metadata.parking).toBe(true);
     expect(metadata.inclusions).toContain("Thermopompe");
     expect(metadata.inclusions).toContain("Internet inclus");
+  });
+
+  it("normalise les statuts ISR en valeurs publiques et actions recommandées", () => {
+    expect(normalizeGestionIsrUnitStatus("Disponible")).toMatchObject({
+      normalizedStatus: "AVAILABLE",
+      isPublishable: true,
+      recommendedAction: "PUBLISH",
+    });
+    expect(normalizeGestionIsrUnitStatus("Loué")).toMatchObject({
+      normalizedStatus: "RENTED",
+      isPublishable: false,
+      recommendedAction: "HIDE",
+    });
+    expect(normalizeGestionIsrUnitStatus("Visite prévue")).toMatchObject({
+      normalizedStatus: "VISIT_SCHEDULED",
+      isPublishable: false,
+      recommendedAction: "HIDE_FROM_LIST",
+    });
   });
 });

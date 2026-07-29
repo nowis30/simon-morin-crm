@@ -16,7 +16,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:seed": "prisma db seed",
-    "render-build": "npm ci && npm run prisma:generate && npm run prisma:migrate:deploy && npm run build"
+    "render-build": "npm ci && npm run prisma:generate && npm run prisma:migrate:deploy && npm run build",
+    "check:isr-migration": "tsx scripts/check-structured-isr-migration.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

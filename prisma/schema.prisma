@@ -204,27 +204,34 @@ model BuildingPhoto {
 }
 
 model RentalUnit {
-  id            String            @id @default(cuid())
-  codeIsr       String            @unique
-  buildingId    String
-  unitNumber    String?
-  floor         String?
-  monthlyPrice  Int
-  bedrooms      Int
-  propertyType  String
-  description   String
-  status        PropertyStatus    @default(AVAILABLE)
-  petsAllowed   Boolean           @default(false)
-  petsDetails   String?
-  parking       Boolean           @default(false)
-  inclusions    String?
-  availableFrom DateTime?
-  gestionIsrUrl String?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  building      Building          @relation(fields: [buildingId], references: [id], onDelete: Cascade)
-  photos        RentalUnitPhoto[]
-  properties    Property[]
+  id                String             @id @default(cuid())
+  codeIsr           String             @unique
+  buildingId        String
+  unitNumber        String?
+  floor             String?
+  monthlyPrice      Int
+  bedrooms          Int
+  propertyType      String
+  description       String
+  status            PropertyStatus     @default(AVAILABLE)
+  petsAllowed       Boolean            @default(false)
+  petsDetails       String?
+  parking           Boolean            @default(false)
+  inclusions        String?
+  availableFrom     DateTime?
+  publicTitle       String?
+  publicDescription String?
+  isPubliclyVisible Boolean?
+  primaryPhotoUrl   String?
+  displayOrder      Int?
+  internalNotes     String?
+  gestionIsrUrl     String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  building          Building           @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  photos            RentalUnitPhoto[]
+  properties        Property[]
+  changes           RentalUnitChange[]
 
   @@index([buildingId, status])
 }
@@ -240,6 +247,35 @@ model RentalUnitPhoto {
   rentalUnit   RentalUnit @relation(fields: [rentalUnitId], references: [id], onDelete: Cascade)
 
   @@index([rentalUnitId, sortOrder])
+}
+
+enum RentalUnitChangeType {
+  PRICE_CHANGED
+  STATUS_CHANGED
+  AVAILABILITY_CHANGED
+  DESCRIPTION_CHANGED
+  FEATURES_CHANGED
+  PHOTOS_CHANGED
+  UNIT_ADDED
+  UNIT_REMOVED_FROM_SOURCE
+}
+
+model RentalUnitChange {
+  id           String               @id @default(cuid())
+  rentalUnitId String
+  syncRunId    String?
+  field        String
+  oldValue     String?
+  newValue     String?
+  changeType   RentalUnitChangeType
+  detectedAt   DateTime             @default(now())
+  appliedAt    DateTime?
+  source       String?
+  metadata     Json?
+  rentalUnit   RentalUnit           @relation(fields: [rentalUnitId], references: [id], onDelete: Cascade)
+
+  @@index([rentalUnitId, detectedAt])
+  @@index([syncRunId])
 }
 
 model Prospect {

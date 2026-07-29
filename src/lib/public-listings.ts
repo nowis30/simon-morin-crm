@@ -33,3 +33,10 @@ export function getPublicFeatures(input: { petsAllowed?: boolean; parking?: bool
 export function isPublicPropertyVisible(status: string) {
   return !["RENTED", "REMOVED", "ARCHIVED"].includes(status);
 }
+
+export function getPublicVisibilityForRentalUnit(input: { status: string; isPubliclyVisible?: boolean | null }) {
+  if (input.isPubliclyVisible === false) {
+    return false;
+  }
+  return isPublicPropertyVisible(input.status);
+}

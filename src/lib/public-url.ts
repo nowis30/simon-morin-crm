@@ -13,9 +13,33 @@ function normalizeBaseUrl(value: string | undefined) {
   }
 }
 
+function isLegacyPublicHost(url: string | undefined) {
+  if (!url) return false;
+  try {
+    const hostname = new URL(url).hostname.toLowerCase();
+    return hostname.includes("nowis.store") || hostname.includes("logements.nowis.store");
+  } catch {
+    return false;
+  }
+}
+
 export function getPublicAppUrl() {
   if (typeof window !== "undefined" && window.location?.origin) {
     return window.location.origin;
+  }
+
+  const runtimeCandidates = [
+    process.env.RENDER_EXTERNAL_URL,
+    process.env.VERCEL_URL,
+    process.env.PUBLIC_URL,
+    process.env.NEXT_PUBLIC_APP_URL,
+  ];
+
+  for (const candidate of runtimeCandidates) {
+    const normalized = normalizeBaseUrl(candidate);
+    if (!normalized) continue;
+    if (isLegacyPublicHost(normalized)) continue;
+    return normalized;
   }
 
   return (

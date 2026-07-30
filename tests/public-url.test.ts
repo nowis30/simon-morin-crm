@@ -21,6 +21,13 @@ describe("getPublicAppUrl", () => {
     expect(getPublicAppUrl()).toBe("https://example.onrender.com");
   });
 
+  it("prefers RENDER_EXTERNAL_URL over a stale NEXT_PUBLIC_APP_URL value", () => {
+    process.env.NEXT_PUBLIC_APP_URL = "https://logements.nowis.store";
+    process.env.RENDER_EXTERNAL_URL = "https://simon-morin-agent-location.onrender.com";
+
+    expect(getPublicAppUrl()).toBe("https://simon-morin-agent-location.onrender.com");
+  });
+
   it("uses the local port fallback when no deployment URL is configured", () => {
     process.env.PORT = "10000";
 

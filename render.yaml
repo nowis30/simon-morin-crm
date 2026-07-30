@@ -32,8 +32,6 @@ services:
         sync: false
       - key: PUBLIC_CONTACT_PHONE
         sync: false
-      - key: NEXT_PUBLIC_APP_URL
-        value: https://logements.nowis.store
       - key: META_GRAPH_API_VERSION
         sync: false
       - key: META_APP_ID
@@ -46,8 +44,6 @@ services:
         sync: false
       - key: META_PAGE_ACCESS_TOKEN
         sync: false
-      - key: META_REDIRECT_URI
-        value: https://logements.nowis.store/api/integrations/meta/facebook/callback
       - key: META_VERIFY_TOKEN
         sync: false
       - key: META_TOKEN_ENCRYPTION_KEY

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { getPublicAppUrl } from "@/lib/public-url";
 
 function formatSummaryLabel(channel: string) {
   if (channel === "PAGE") return "Page Facebook";
@@ -102,12 +103,11 @@ type ManualPreparedPayload = {
   primaryPhotoUrl: string | null;
 };
 
-const DEFAULT_PUBLIC_BASE_URL = "https://logements.nowis.store";
 const OFFICIAL_PUBLIC_PHONE = "819-388-3407";
 const OFFICIAL_PUBLIC_EMAIL = "simonmorin@nowis.store";
 
 function getPublicBaseUrl() {
-  return process.env.NEXT_PUBLIC_APP_URL || DEFAULT_PUBLIC_BASE_URL;
+  return getPublicAppUrl();
 }
 
 function getPublicListingLink(ad: Advertisement) {

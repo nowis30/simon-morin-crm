@@ -19,9 +19,17 @@ type MetaStatus = {
   configured: boolean;
   configIssues: string[];
   connected: boolean;
+  pageIdMatches: boolean;
+  tokenValid: boolean;
+  graphApiVersion: string;
+  grantedScopes: string[];
+  missingScopes: string[];
+  issues: string[];
   pageId: string | null;
   pageName: string | null;
-  lastSyncAt: string | null;
+  tokenRevoked: boolean;
+  tokenExpiresAt: string | null;
+  connectionExists: boolean;
 };
 
 type Group = {
@@ -46,11 +54,17 @@ type Advertisement = {
   approvalNotes: string | null;
   property: {
     id: string;
+    rentalUnitId: string | null;
     codeIsr: string;
     address: string;
     city: string;
     district: string | null;
     monthlyPrice: number;
+    bedrooms: number;
+    propertyType: string;
+    petsAllowed: boolean;
+    parking: boolean;
+    inclusions: string | null;
     status: string;
     photos: Array<{ id: string; url: string; description: string | null }>;
   } | null;
@@ -68,6 +82,7 @@ type Advertisement = {
     status: string;
     publicationUrl: string | null;
     publishedAt: string | null;
+    errorMessage?: string | null;
   }>;
   groupPublications: Array<{
     id: string;
@@ -77,6 +92,47 @@ type Advertisement = {
     group: { id: string; name: string; city: string | null };
   }>;
 };
+
+const DEFAULT_PUBLIC_BASE_URL = "https://logements.nowis.store";
+const OFFICIAL_PUBLIC_PHONE = "819-388-3407";
+const OFFICIAL_PUBLIC_EMAIL = "simonmorin@nowis.store";
+
+function getPublicBaseUrl() {
+  return process.env.NEXT_PUBLIC_APP_URL || DEFAULT_PUBLIC_BASE_URL;
+}
+
+function getPublicListingLink(ad: Advertisement) {
+  if (!ad.property) {
+    return null;
+  }
+  const listingId = ad.property.rentalUnitId || ad.property.id;
+  return `${getPublicBaseUrl()}/logements/${listingId}`;
+}
+
+function buildManualPublicationText(ad: Advertisement) {
+  if (!ad.property) {
+    return ad.title;
+  }
+
+  const location = ad.property.district ? `${ad.property.city} - ${ad.property.district}` : ad.property.city;
+  const features: string[] = [];
+  if (ad.property.petsAllowed) features.push("Animaux acceptes");
+  if (ad.property.parking) features.push("Stationnement inclus");
+  if (ad.property.inclusions?.trim()) features.push(ad.property.inclusions.trim());
+  const link = getPublicListingLink(ad) || getPublicBaseUrl();
+
+  return [
+    ad.title,
+    `${ad.property.monthlyPrice.toLocaleString("fr-CA")} $ / mois`,
+    `${ad.property.bedrooms} chambre${ad.property.bedrooms > 1 ? "s" : ""} · ${ad.property.propertyType}`,
+    location,
+    features.length > 0 ? `Caracteristiques: ${features.slice(0, 4).join(" · ")}` : null,
+    "Demandez votre visite des maintenant.",
+    link,
+    `Telephone: ${OFFICIAL_PUBLIC_PHONE}`,
+    `Courriel: ${OFFICIAL_PUBLIC_EMAIL}`,
+  ].filter(Boolean).join("\n");
+}
 
 type GroupSuggestionPayload = {
   advertisement: { id: string; title: string; body: string; language: string; status: string };
@@ -111,6 +167,27 @@ export function MarketingApprovalClient() {
   const [approveAllSummary, setApproveAllSummary] = useState<{ channels: string[]; photoCount: number; incompleteFields: string[]; warnings: string[]; lastPropertyCheck: string | null } | null>(null);
 
   const selectedAd = useMemo(() => items.find((item) => item.id === selectedAdId) ?? null, [items, selectedAdId]);
+
+  async function copyToClipboard(value: string, successMessage: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setMessage(successMessage);
+    } catch {
+      setError("Impossible de copier dans le presse-papiers.");
+    }
+  }
+
+  async function testFacebookConnection() {
+    setError(null);
+    const response = await fetch("/api/integrations/meta/facebook/diagnostic");
+    const payload = await response.json();
+    if (!response.ok) {
+      setError(payload.error || "Diagnostic Facebook impossible.");
+      return;
+    }
+    setMetaStatus(payload);
+    setMessage("Diagnostic Facebook termine.");
+  }
 
   async function load() {
     setLoading(true);
@@ -394,6 +471,9 @@ export function MarketingApprovalClient() {
         <p>Configuration: {metaStatus?.configured ? "Complete" : "Incomplete"}</p>
         <p>Etat: {metaStatus?.connected ? "Connecte" : "Non connecte"}</p>
         <p>Page: {metaStatus?.pageName || "N/A"} {metaStatus?.pageId ? `(${metaStatus.pageId})` : ""}</p>
+        <p>Version Graph API: {metaStatus?.graphApiVersion || "N/A"}</p>
+        <p>Jeton valide: {metaStatus?.tokenValid ? "Oui" : "Non"}</p>
+        <p>Permissions manquantes: {metaStatus?.missingScopes?.length ? metaStatus.missingScopes.join(", ") : "Aucune"}</p>
         {metaStatus?.configIssues?.length ? (
           <div className="rounded-lg bg-amber-100 p-3 text-amber-900">
             {metaStatus.configIssues.map((issue) => (
@@ -401,8 +481,17 @@ export function MarketingApprovalClient() {
             ))}
           </div>
         ) : null}
+        {metaStatus?.issues?.length ? (
+          <div className="rounded-lg bg-amber-100 p-3 text-amber-900">
+            {metaStatus.issues.map((issue) => (
+              <p key={issue}>- {issue}</p>
+            ))}
+          </div>
+        ) : null}
         <div className="flex flex-wrap gap-2">
           <a href="/api/integrations/meta/facebook/connect" className="rounded-lg bg-[var(--accent)] px-4 py-2 text-white">Connecter Meta</a>
+          <a href="/api/integrations/meta/facebook/connect" className="rounded-lg border border-emerald-300 px-4 py-2">Reconnecter la Page Facebook</a>
+          <button onClick={testFacebookConnection} className="rounded-lg border border-emerald-300 px-4 py-2">Tester la connexion Facebook</button>
           <button onClick={disconnectMeta} className="rounded-lg border border-emerald-300 px-4 py-2">Deconnecter</button>
         </div>
       </div>
@@ -509,6 +598,9 @@ export function MarketingApprovalClient() {
                 <button className="rounded-lg bg-[var(--accent)] px-3 py-2 text-sm text-white" onClick={() => publishPage(ad.id)} disabled={ad.status !== "APPROVED"}>
                   Publier sur Page Facebook
                 </button>
+                <button className="rounded-lg border border-emerald-300 px-3 py-2 text-sm" onClick={() => publishPage(ad.id)}>
+                  Reessayer la publication
+                </button>
                 <button className="rounded-lg border border-emerald-300 px-3 py-2 text-sm" onClick={() => markMarketplacePublished(ad.id)} disabled={ad.status !== "APPROVED" && ad.status !== "MANUAL_ACTION_REQUIRED"}>
                   Marquer Marketplace publie
                 </button>
@@ -517,12 +609,51 @@ export function MarketingApprovalClient() {
                 </button>
               </div>
 
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button className="rounded-lg border border-emerald-300 px-3 py-2 text-sm" onClick={() => copyToClipboard(buildManualPublicationText(ad), "Texte copie.")}>Copier le texte</button>
+                <button
+                  className="rounded-lg border border-emerald-300 px-3 py-2 text-sm"
+                  onClick={() => {
+                    const link = getPublicListingLink(ad);
+                    if (!link) {
+                      setError("Lien public indisponible pour cette annonce.");
+                      return;
+                    }
+                    void copyToClipboard(link, "Lien du logement copie.");
+                  }}
+                >
+                  Copier le lien du logement
+                </button>
+                <button
+                  className="rounded-lg border border-emerald-300 px-3 py-2 text-sm"
+                  onClick={() => {
+                    const link = getPublicListingLink(ad);
+                    if (!link) {
+                      setError("Lien public indisponible pour cette annonce.");
+                      return;
+                    }
+                    window.open(link, "_blank", "noopener,noreferrer");
+                  }}
+                >
+                  Ouvrir la fiche publique
+                </button>
+                <button
+                  className="rounded-lg border border-emerald-300 px-3 py-2 text-sm"
+                  onClick={() => {
+                    const pageUrl = metaStatus?.pageId ? `https://www.facebook.com/${metaStatus.pageId}` : "https://www.facebook.com/";
+                    window.open(pageUrl, "_blank", "noopener,noreferrer");
+                  }}
+                >
+                  Ouvrir ma Page Facebook
+                </button>
+              </div>
+
               {ad.publications.length > 0 ? (
                 <details className="mt-3">
                   <summary className="cursor-pointer text-sm font-semibold">Historique publications ({ad.publications.length})</summary>
                   <div className="mt-2 grid gap-1 text-xs">
                     {ad.publications.map((publication) => (
-                      <p key={publication.id}>{publication.channel} | {publication.status} | {publication.publicationUrl || "N/A"}</p>
+                      <p key={publication.id}>{publication.channel} | {publication.status} | {publication.publicationUrl || "N/A"}{publication.errorMessage ? ` | ${publication.errorMessage}` : ""}</p>
                     ))}
                   </div>
                 </details>

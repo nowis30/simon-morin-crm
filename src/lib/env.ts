@@ -2,6 +2,7 @@ import { z } from "zod";
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
   DATABASE_URL: z.string().min(1, "DATABASE_URL est requis"),
   SESSION_SECRET: z.string().min(32, "SESSION_SECRET doit contenir au moins 32 caracteres"),
   GOOGLE_CLIENT_ID: z.string().optional(),
@@ -18,6 +19,10 @@ const envSchema = z.object({
   META_REDIRECT_URI: z.string().optional(),
   META_PAGE_ID: z.string().optional(),
   META_PAGE_ACCESS_TOKEN: z.string().optional(),
+  META_GRAPH_API_VERSION: z.preprocess(
+    (value) => (typeof value === "string" && value.trim().length === 0 ? undefined : value),
+    z.string().default("v20.0"),
+  ),
   META_VERIFY_TOKEN: z.string().optional(),
   META_TOKEN_ENCRYPTION_KEY: z.string().optional(),
 });
@@ -32,6 +37,7 @@ export const env = parsed.success
   ? parsed.data
   : {
       NODE_ENV: "test",
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000",
       DATABASE_URL: "postgresql://test:test@localhost:5432/test",
       SESSION_SECRET: "test_secret_that_is_long_enough_for_unit_tests_only",
       GOOGLE_CLIENT_ID: undefined,
@@ -48,6 +54,7 @@ export const env = parsed.success
       META_REDIRECT_URI: undefined,
       META_PAGE_ID: undefined,
       META_PAGE_ACCESS_TOKEN: undefined,
+      META_GRAPH_API_VERSION: "v20.0",
       META_VERIFY_TOKEN: undefined,
       META_TOKEN_ENCRYPTION_KEY: undefined,
     };

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getMetaStatus } from "@/lib/meta-facebook";
+import { getMetaDiagnostic } from "@/lib/meta-facebook";
 import { requireApiUser, safeServerError } from "@/lib/route-guards";
 
 export async function GET() {
@@ -9,7 +9,7 @@ export async function GET() {
       return auth.response;
     }
 
-    const status = await getMetaStatus(auth.user!.id);
+    const status = await getMetaDiagnostic(auth.user!.id);
     return NextResponse.json(status);
   } catch {
     return safeServerError();

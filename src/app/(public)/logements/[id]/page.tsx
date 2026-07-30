@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { ListingPhotoGallery } from "@/components/public/listing-photo-gallery";
 import { VisitRequestForm } from "@/components/public/visit-request-form";
 import { dedupeListingPhotos, formatPublicAddress, getPublicFeatures, isPropertyPubliclyAvailable, isRentalUnitPubliclyAvailable, type ListingPhoto } from "@/lib/public-listings";
+import { getPublicListingUrl } from "@/lib/public-url";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -23,13 +24,20 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       images: [
         {
           url: "/annonce.png",
-          width: 1200,
-          height: 630,
-          alt: "Logements a louer a Drummondville",
+          width: 864,
+          height: 1821,
+          alt: "Logements a louer a Drummondville avec Simon Morin",
         },
       ],
       locale: "fr_CA",
       type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Logements a louer a Drummondville | Simon Morin",
+      description:
+        "Decouvrez les logements disponibles a Drummondville et dans les environs. Consultez les photos, les caracteristiques et envoyez votre demande de visite.",
+      images: ["/annonce.png"],
     },
   };
 }
@@ -127,6 +135,14 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
             <aside className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
               <h2 className="text-xl font-semibold">Demander une visite</h2>
               <p className="mt-2 text-sm text-slate-400">Votre demande sera transmise à Simon pour confirmation manuelle.</p>
+              <a
+                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getPublicListingUrl(item.id))}`}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-4 inline-flex rounded-full border border-emerald-400 px-4 py-2 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/10"
+              >
+                Partager ce logement
+              </a>
               {item.isUnavailable ? (
                 <div className="mt-6 space-y-4 rounded-xl border border-slate-700 bg-slate-950/70 p-4 text-sm text-slate-300">
                   <p>Ce logement n’est plus disponible — voir les logements semblables.</p>
@@ -217,6 +233,14 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
           <aside className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
             <h2 className="text-xl font-semibold">Demander une visite</h2>
             <p className="mt-2 text-sm text-slate-400">Votre demande sera transmise à Simon pour confirmation manuelle.</p>
+            <a
+              href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getPublicListingUrl(fallbackItem.id))}`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-4 inline-flex rounded-full border border-emerald-400 px-4 py-2 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/10"
+            >
+              Partager ce logement
+            </a>
             <VisitRequestForm propertyId={fallbackItem.id} />
           </aside>
         </div>

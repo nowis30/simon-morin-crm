@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { env } from "@/lib/env";
+import { getPublicAppUrl } from "@/lib/public-url";
 
 const OFFICIAL_PUBLIC_EMAIL = "simonmorin@nowis.store";
 const OFFICIAL_PUBLIC_PHONE_DISPLAY = "819-388-3407";
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
   },
   description:
     "Decouvrez les logements disponibles a Drummondville et dans les environs. Consultez les photos, les caracteristiques et envoyez votre demande de visite.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
+  metadataBase: new URL(getPublicAppUrl()),
   openGraph: {
     title: "Logements a louer a Drummondville | Simon Morin",
     description:

@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { getPublicAppUrl } from "@/lib/public-url";
 
 const OFFICIAL_PUBLIC_EMAIL = "simonmorin@nowis.store";
 const OFFICIAL_PUBLIC_PHONE_DISPLAY = "819-388-3407";
 const OFFICIAL_PUBLIC_PHONE_TECHNICAL = "+18193883407";
 
 async function getCatalogItems() {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/public/catalog`, {
+  const response = await fetch(`${getPublicAppUrl()}/api/public/catalog`, {
     cache: "no-store",
   });
 

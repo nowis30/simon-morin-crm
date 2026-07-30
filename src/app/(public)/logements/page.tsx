@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ListingSearch } from "@/components/public/listing-search";
+import { getPublicAppUrl } from "@/lib/public-url";
 
 export const metadata: Metadata = {
   title: "Logements disponibles",
@@ -61,7 +62,7 @@ function buildPageUrl(
 
 async function getCatalogItems(searchParams: Record<string, string | string[] | undefined>) {
   const query = buildQueryString(searchParams);
-  const url = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/public/catalog${query ? `?${query}` : ""}`;
+  const url = `${getPublicAppUrl()}/api/public/catalog${query ? `?${query}` : ""}`;
 
   const response = await fetch(url, { cache: "no-store" });
 

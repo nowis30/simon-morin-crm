@@ -7,7 +7,7 @@ services:
     branch: main
     buildCommand: npm run render-build
     startCommand: npm start
-    autoDeploy: true
+    autoDeploy: false
     healthCheckPath: /api/health
     envVars:
       - key: DATABASE_URL
@@ -33,17 +33,19 @@ services:
       - key: PUBLIC_CONTACT_PHONE
         sync: false
       - key: NEXT_PUBLIC_APP_URL
-        value: https://simon-morin-agent-location.onrender.com
+        value: https://logements.nowis.store
+      - key: META_GRAPH_API_VERSION
+        sync: false
       - key: META_APP_ID
         sync: false
       - key: META_APP_SECRET
         sync: false
-      - key: META_VERIFY_TOKEN
+      - key: META_PAGE_ID
         sync: false
       - key: META_PAGE_ACCESS_TOKEN
         sync: false
       - key: META_REDIRECT_URI
-        value: https://simon-morin-agent-location.onrender.com/api/integrations/meta/facebook/callback
+        value: https://logements.nowis.store/api/integrations/meta/facebook/callback
       - key: META_VERIFY_TOKEN
         sync: false
       - key: META_TOKEN_ENCRYPTION_KEY

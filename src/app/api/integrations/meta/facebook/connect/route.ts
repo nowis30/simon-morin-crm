@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { env, getMetaConfigIssues } from "@/lib/env";
 import { connectMetaFromEnvToken, createMetaOAuthUrl, createMetaState } from "@/lib/meta-facebook";
+import { getPublicAppUrl } from "@/lib/public-url";
 import { requireApiUser, safeServerError } from "@/lib/route-guards";
 
 export async function GET() {
@@ -12,7 +13,7 @@ export async function GET() {
 
     if (env.META_PAGE_ACCESS_TOKEN) {
       await connectMetaFromEnvToken(auth.user!.id);
-      return NextResponse.redirect(new URL("/marketing/approval", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"));
+      return NextResponse.redirect(new URL("/marketing/approval?meta=connected", getPublicAppUrl()));
     }
 
     if (!env.META_APP_ID || !env.META_REDIRECT_URI || !env.META_APP_SECRET) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { env, getMetaConfigIssues } from "@/lib/env";
 import { connectMetaFromEnvToken, createMetaOAuthUrl, createMetaState } from "@/lib/meta-facebook";
+import { getPublicAppUrl } from "@/lib/public-url";
 import { requireApiUser, safeServerError } from "@/lib/route-guards";
 
 export async function GET(request: NextRequest) {
@@ -17,12 +18,22 @@ export async function GET(request: NextRequest) {
 
     if (env.META_PAGE_ACCESS_TOKEN) {
       await connectMetaFromEnvToken(auth.user!.id);
-      return NextResponse.redirect(new URL("/marketing/approval?meta=connected", request.url));
+      return NextResponse.redirect(new URL("/marketing/approval?meta=connected", getPublicAppUrl()));
     }
 
     const state = createMetaState(auth.user!.id);
     const url = createMetaOAuthUrl(state);
-    return NextResponse.redirect(url);
+    const response = NextResponse.redirect(url);
+    response.cookies.set({
+      name: "meta_oauth_state",
+      value: state,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 10 * 60,
+    });
+    return response;
   } catch {
     return safeServerError();
   }

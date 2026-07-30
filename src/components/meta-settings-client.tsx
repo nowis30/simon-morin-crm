@@ -4,18 +4,22 @@ import { useEffect, useState } from "react";
 
 type MetaStatus = {
   configured: boolean;
+  connectionExists: boolean;
   configIssues: string[];
   connected: boolean;
+  pageIdMatches: boolean;
+  tokenValid: boolean;
   pageId: string | null;
   pageName: string | null;
-  lastSyncAt: string | null;
-  appIdConfigured: boolean;
-  appSecretConfigured: boolean;
+  graphApiVersion: string;
+  tokenExpiresAt: string | null;
+  tokenRevoked: boolean;
+  appIdConfigured?: boolean;
+  appSecretConfigured?: boolean;
   redirectUri: string | null;
-  permissions: string[];
-  missingPermissions: string[];
-  dryRun: boolean;
-  error: string | null;
+  grantedScopes: string[];
+  missingScopes: string[];
+  issues: string[];
 };
 
 export function MetaSettingsClient() {
@@ -61,15 +65,20 @@ export function MetaSettingsClient() {
   }
 
   async function testConnection() {
-    await runAction("/api/integrations/meta/test", "POST");
-  }
-
-  async function testPermissions() {
-    await runAction("/api/integrations/meta/test?mode=permissions", "POST");
-  }
-
-  async function simulatePublish() {
-    await runAction("/api/integrations/meta/test?mode=publish", "POST");
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const response = await fetch("/api/integrations/meta/facebook/diagnostic");
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error || "Diagnostic Meta impossible");
+      setMeta(json);
+      setMessage("Diagnostic Facebook termine.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur inattendue");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -82,11 +91,9 @@ export function MetaSettingsClient() {
       <div className="card grid gap-3 p-4 text-sm">
         <div className="flex flex-wrap gap-2">
           <button className="rounded-lg bg-[var(--accent)] px-4 py-2 text-white" onClick={() => window.location.assign("/api/integrations/meta/connect")}>Connecter Facebook</button>
-          <button className="rounded-lg border border-emerald-300 px-4 py-2" onClick={() => runAction("/api/integrations/meta/connect")}>Reconnecter</button>
-          <button className="rounded-lg border border-red-300 px-4 py-2" onClick={() => runAction("/api/integrations/meta/disconnect", "POST")}>Déconnecter</button>
+          <button className="rounded-lg border border-emerald-300 px-4 py-2" onClick={() => window.location.assign("/api/integrations/meta/facebook/connect")}>Reconnecter la Page Facebook</button>
+          <button className="rounded-lg border border-red-300 px-4 py-2" onClick={() => runAction("/api/integrations/meta/facebook/disconnect", "POST")}>Déconnecter</button>
           <button className="rounded-lg border border-emerald-300 px-4 py-2" onClick={testConnection}>Tester la connexion</button>
-          <button className="rounded-lg border border-emerald-300 px-4 py-2" onClick={testPermissions}>Tester les permissions</button>
-          <button className="rounded-lg border border-emerald-300 px-4 py-2" onClick={simulatePublish}>Tester une publication simulée</button>
         </div>
 
         {loading ? <p>Chargement…</p> : null}
@@ -97,13 +104,21 @@ export function MetaSettingsClient() {
             <p><strong>App Secret:</strong> {meta.appSecretConfigured ? "Configuré" : "Absent"}</p>
             <p><strong>URI de redirection:</strong> {meta.redirectUri || "Non définie"}</p>
             <p><strong>Connexion Facebook:</strong> {meta.connected ? "Connectée" : "Non connectée"}</p>
+            <p><strong>MetaConnection:</strong> {meta.connectionExists ? "Présente" : "Absente"}</p>
             <p><strong>Page sélectionnée:</strong> {meta.pageName || "Aucune"}</p>
             <p><strong>ID de page:</strong> {meta.pageId ? meta.pageId.replace(/.(?=.{4,}$)/g, "•") : "Aucun"}</p>
-            <p><strong>Permissions obtenues:</strong> {meta.permissions.length > 0 ? meta.permissions.join(", ") : "Aucune"}</p>
-            <p><strong>Permissions manquantes:</strong> {meta.missingPermissions.length > 0 ? meta.missingPermissions.join(", ") : "Aucune"}</p>
-            <p><strong>Dernière vérification:</strong> {meta.lastSyncAt || "Aucune"}</p>
-            <p><strong>Mode simulation:</strong> {meta.dryRun ? "Activé" : "Désactivé"}</p>
-            {meta.error ? <p className="text-red-700">{meta.error}</p> : null}
+            <p><strong>Page ID valide:</strong> {meta.pageIdMatches ? "Oui" : "Non"}</p>
+            <p><strong>Jeton valide:</strong> {meta.tokenValid ? "Oui" : "Non"}</p>
+            <p><strong>Version Graph API:</strong> {meta.graphApiVersion}</p>
+            <p><strong>Permissions obtenues:</strong> {meta.grantedScopes.length > 0 ? meta.grantedScopes.join(", ") : "Aucune"}</p>
+            <p><strong>Permissions manquantes:</strong> {meta.missingScopes.length > 0 ? meta.missingScopes.join(", ") : "Aucune"}</p>
+            <p><strong>Expiration du jeton:</strong> {meta.tokenExpiresAt || "Non fournie"}</p>
+            <p><strong>Jeton révoqué/expiré:</strong> {meta.tokenRevoked ? "Oui" : "Non"}</p>
+            {meta.issues.length > 0 ? (
+              <div className="rounded-lg bg-amber-100 p-2 text-amber-900">
+                {meta.issues.map((issue) => <p key={issue}>- {issue}</p>)}
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>

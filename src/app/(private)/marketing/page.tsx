@@ -534,7 +534,7 @@ export default function MarketingPage() {
       {singlePreview.length > 0 ? (
         <div className="card grid gap-3 p-4">
           <h3 className="text-xl font-bold">Apercu avant enregistrement</h3>
-          <p className="text-sm text-emerald-800">Ces textes ne sont pas enregistres tant que tu ne cliques pas sur "Confirmer et enregistrer".</p>
+          <p className="text-sm text-emerald-800">Ces textes ne sont pas enregistres tant que tu ne cliques pas sur &quot;Confirmer et enregistrer&quot;.</p>
           <div className="grid gap-3">
             {singlePreview.map((item) => {
               const status = getEditableDraftStatus(item);

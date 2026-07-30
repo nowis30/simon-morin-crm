@@ -30,7 +30,6 @@ export async function POST(request: Request) {
 
     const listings = await fetchGestionIsrListings(sourceUrl);
     const sourceHash = buildPreviewHash(sourceUrl, listings);
-    const previewId = sourceHash.slice(0, 16);
 
     const summary = listings.map((listing) => {
       const metadata = inferGestionIsrMetadata(listing.descriptionFr);

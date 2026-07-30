@@ -1,5 +1,7 @@
 import { prisma } from "../src/lib/prisma";
 
+type RegClassRow = { table_name: string | null };
+
 async function main() {
   const [propertyCount, photoCount, prospectCount, visitCount, placementCount, commissionCount, advertisementCount] = await Promise.all([
     prisma.property.count(),
@@ -12,8 +14,8 @@ async function main() {
   ]);
 
   const [buildingTable, rentalUnitTable, propertyBuildingLinks, propertyRentalLinks] = await Promise.all([
-    prisma.$queryRawUnsafe('SELECT to_regclass(\'public."Building"\') AS table_name') as Promise<any[]>,
-    prisma.$queryRawUnsafe('SELECT to_regclass(\'public."RentalUnit"\') AS table_name') as Promise<any[]>,
+    prisma.$queryRawUnsafe<RegClassRow[]>('SELECT to_regclass(\'public."Building"\') AS table_name'),
+    prisma.$queryRawUnsafe<RegClassRow[]>('SELECT to_regclass(\'public."RentalUnit"\') AS table_name'),
     prisma.property.count({ where: { buildingId: { not: null } } }),
     prisma.property.count({ where: { rentalUnitId: { not: null } } }),
   ]);

@@ -148,7 +148,7 @@ export function PublicContactForm() {
           checked={form.consent}
           onChange={(event) => setForm((current) => ({ ...current, consent: event.target.checked }))}
         />
-        J'accepte d'etre contacte par Simon Morin concernant ma demande.
+        J&apos;accepte d&apos;etre contacte par Simon Morin concernant ma demande.
       </label>
 
       <button

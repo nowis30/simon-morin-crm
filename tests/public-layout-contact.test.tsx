@@ -23,8 +23,8 @@ describe("public layout and contact routing", () => {
   });
 
   it("points Contact navigation to /contact", async () => {
-    const module = await import("@/app/(public)/layout");
-    const html = renderToStaticMarkup(module.default({ children: <div>content</div> }));
+    const layoutModule = await import("@/app/(public)/layout");
+    const html = renderToStaticMarkup(layoutModule.default({ children: <div>content</div> }));
     expect(html).toContain("href=\"/contact\"");
     expect(html).not.toContain("/#contact");
     expect(html).toContain("Simon Morin");

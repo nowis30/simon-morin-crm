@@ -52,7 +52,7 @@ export default function PublicContactPage() {
         </div>
 
         <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
-          Pour un logement precis, envoyez votre demande directement depuis la fiche du logement afin d'accelerer la confirmation.
+          Pour un logement precis, envoyez votre demande directement depuis la fiche du logement afin d&apos;accelerer la confirmation.
         </p>
       </div>
 

@@ -121,7 +121,7 @@ describe("Meta publication", () => {
     });
     decryptMetaToken.mockReturnValue("page-token");
 
-    transactionMock.mockImplementation(async (arg: any) => {
+    transactionMock.mockImplementation(async (arg: unknown) => {
       if (typeof arg === "function") {
         return arg({
           advertisementPublication: { update: advertisementPublicationUpdate },

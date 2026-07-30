@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
         select: { id: true },
       });
 
-      const item = await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx) => {
         const buildingCode = buildEntityCode("BLDG", listing.buildingId || listing.sourceId || listing.codeIsr);
         const unitCode = buildEntityCode("UNIT", listing.unitId || listing.codeIsr);
 

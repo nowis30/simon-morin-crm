@@ -169,7 +169,7 @@ export function VisitRequestForm({ propertyId, rentalUnitId, unavailable }: { pr
       </label>
 
       <label className="grid gap-1 text-sm font-medium text-slate-800">
-        Date d'emmenagement souhaitee
+        Date d&apos;emmenagement souhaitee
         <input
           type="date"
           autoComplete="off"
@@ -181,7 +181,7 @@ export function VisitRequestForm({ propertyId, rentalUnitId, unavailable }: { pr
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="grid gap-1 text-sm font-medium text-slate-800">
-          Nombre d'occupants
+          Nombre d&apos;occupants
           <input
             type="number"
             inputMode="numeric"
@@ -235,7 +235,7 @@ export function VisitRequestForm({ propertyId, rentalUnitId, unavailable }: { pr
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <label className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700"><input type="checkbox" checked={form.hasPets} onChange={(event) => setForm({ ...form, hasPets: event.target.checked })} /> Presence d'animaux</label>
+        <label className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700"><input type="checkbox" checked={form.hasPets} onChange={(event) => setForm({ ...form, hasPets: event.target.checked })} /> Presence d&apos;animaux</label>
         <label className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700"><input type="checkbox" checked={form.needsParking} onChange={(event) => setForm({ ...form, needsParking: event.target.checked })} /> Besoin de stationnement</label>
       </div>
 

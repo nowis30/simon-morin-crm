@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { NextRequest } from "next/server";
 
 const unauthorizedResponse = new Response(JSON.stringify({ error: "Authentification requise" }), {
   status: 401,
@@ -16,7 +17,7 @@ vi.mock("@/lib/route-guards", async () => {
 describe("internal API auth", () => {
   it("rejects unauthenticated access to /api/properties", async () => {
     const { GET } = await import("@/app/api/properties/route");
-    const response = await GET(new Request("http://localhost/api/properties") as any);
+    const response = await GET(new NextRequest("http://localhost/api/properties"));
 
     expect(response.status).toBe(401);
   });

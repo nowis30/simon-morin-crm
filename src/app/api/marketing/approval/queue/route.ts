@@ -1,3 +1,4 @@
+import { AdvertisementStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireApiUser, safeServerError } from "@/lib/route-guards";
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
     const items = await prisma.advertisement.findMany({
       where: {
         propertyId,
-        ...(status ? { status: status as any } : {}),
+        ...(status ? { status: status as AdvertisementStatus } : {}),
       },
       include: {
         property: { include: { photos: { orderBy: { sortOrder: "asc" } } } },

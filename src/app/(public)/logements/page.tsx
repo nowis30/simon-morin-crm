@@ -95,7 +95,7 @@ export default async function PublicListingsPage({
         <div className="space-y-3">
           <p className="text-sm uppercase tracking-[0.3em] text-emerald-700">Logements disponibles</p>
           <h1 className="text-2xl font-black md:text-4xl">Decouvrez les unites disponibles</h1>
-          <p className="max-w-2xl text-slate-700">Chaque unite montre les informations utiles au client, sans afficher l'adresse complete avant validation de visite.</p>
+          <p className="max-w-2xl text-slate-700">Chaque unite montre les informations utiles au client, sans afficher l&apos;adresse complete avant validation de visite.</p>
         </div>
 
         <ListingSearch total={data.total} />

@@ -337,7 +337,7 @@ export function VisitsClient({ initialView = "TODAY" }: { initialView?: VisitsVi
           ))}
         </select>
         <input name="notes" placeholder="Notes" className="rounded-lg border border-emerald-200 px-3 py-3" />
-        <p className="text-xs text-emerald-900 md:col-span-2">Cette visite doit etre approuvee par Simon avant d'etre confirmee.</p>
+        <p className="text-xs text-emerald-900 md:col-span-2">Cette visite doit etre approuvee par Simon avant d&apos;etre confirmee.</p>
         <button className="rounded-lg bg-[var(--accent)] px-4 py-3 text-white md:col-span-2" disabled={!selectedSlot}>Soumettre la demande</button>
       </form>
 

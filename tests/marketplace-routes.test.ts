@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const mockWriteAuditLog = vi.fn(async () => {});
-const mockRequireApiUser = vi.fn(async () => ({ user: { id: "user-1" } }));
+const mockRequireApiUser = vi.fn<() => Promise<{ user?: { id: string }; response?: Response }>>(async () => ({ user: { id: "user-1" } }));
 const mockValidateCsrf = vi.fn(async () => true);
 
 const mockPrisma = {
@@ -60,7 +60,7 @@ describe("marketplace package route", () => {
   });
 
   it("requires authenticated admin user", async () => {
-    mockRequireApiUser.mockResolvedValue({ response: new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 }) } as any);
+    mockRequireApiUser.mockResolvedValue({ response: new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 }) });
     const { POST } = await import("@/app/api/marketing/marketplace/[advertisementId]/package/route");
 
     const request = new NextRequest("http://localhost/api/marketing/marketplace/ad-1/package", {

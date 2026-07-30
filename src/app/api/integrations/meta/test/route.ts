@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getMetaDiagnostic } from "@/lib/meta-facebook";
 import { requireApiUser, safeServerError } from "@/lib/route-guards";
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
     const auth = await requireApiUser();
     if (auth.response) {

@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { NextRequest } from "next/server";
 
 const connectMetaFromEnvToken = vi.fn();
 const createMetaOAuthUrl = vi.fn(() => "https://example.com/meta/oauth");
@@ -31,7 +30,7 @@ describe("meta connect alias route", () => {
 
   it("redirects to the approval page when a page token is configured", async () => {
     const { GET } = await import("@/app/api/integrations/meta/connect/route");
-    const response = await GET(new NextRequest("http://localhost/api/integrations/meta/connect"));
+    const response = await GET();
 
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toContain("/marketing/approval?meta=connected");

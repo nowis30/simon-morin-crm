@@ -278,7 +278,6 @@ export function normalizeGestionIsrSupabaseListings(records: GestionIsrSupabaseR
       const address = parseAddressFromText(unit?.carac?.rue || baseAddress);
       const description = clean(unit?.caract) || baseDescription;
       const rawStatus = String(unit?.statut ?? record.titre ?? "").trim();
-      const status = normalizeStatus(rawStatus);
       const titleSeed = `${identity.buildingId || baseAddress}-${identity.unitId || unit?.numero || unit?.etage || "unit"}`;
       const codeIsr = parseCode(titleSeed, titleSeed);
 

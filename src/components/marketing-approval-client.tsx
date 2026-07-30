@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getPublicAppUrl } from "@/lib/public-url";
 
 function formatSummaryLabel(channel: string) {
@@ -190,8 +190,6 @@ export function MarketingApprovalClient() {
   const [selectedPagePhotos, setSelectedPagePhotos] = useState<Record<string, string[]>>({});
   const [manualPreparedByAd, setManualPreparedByAd] = useState<Record<string, ManualPreparedPayload>>({});
   const [groupForm, setGroupForm] = useState({ name: "", link: "", city: "", language: "", sectors: "" });
-  const [approveAllSummary, setApproveAllSummary] = useState<{ channels: string[]; photoCount: number; incompleteFields: string[]; warnings: string[]; lastPropertyCheck: string | null } | null>(null);
-
   const selectedAd = useMemo(() => items.find((item) => item.id === selectedAdId) ?? null, [items, selectedAdId]);
 
   async function copyToClipboard(value: string, successMessage: string) {
@@ -215,7 +213,7 @@ export function MarketingApprovalClient() {
     setMessage("Diagnostic Facebook termine.");
   }
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -235,21 +233,23 @@ export function MarketingApprovalClient() {
         throw new Error("Impossible de charger le centre d'approbation.");
       }
 
+      const queueItems = ((queueData as { items?: Advertisement[] }).items ?? []);
+
       setDashboard(dashboardData);
       setMetaStatus(metaData);
-      setItems(queueData.items ?? []);
+      setItems(queueItems);
       setGroups(groupsData.items ?? []);
 
       const photoState: Record<string, string[]> = {};
-      for (const ad of queueData.items ?? []) {
+      for (const ad of queueItems) {
         const existing = (ad.selectedPhotos ?? [])
-          .filter((item: any) => item.channel === "PAGE" && !item.excluded)
-          .sort((a: any, b: any) => Number(b.isPrimary) - Number(a.isPrimary) || a.sortOrder - b.sortOrder)
-          .map((item: any) => item.propertyPhotoId);
+          .filter((item) => item.channel === "PAGE" && !item.excluded)
+          .sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary) || a.sortOrder - b.sortOrder)
+          .map((item) => item.propertyPhotoId);
         if (existing.length > 0) {
           photoState[ad.id] = existing;
-        } else if (ad.property?.photos?.length > 0) {
-          photoState[ad.id] = ad.property.photos.slice(0, 6).map((photo: any) => photo.id);
+        } else if (ad.property && ad.property.photos.length > 0) {
+          photoState[ad.id] = ad.property.photos.slice(0, 6).map((photo) => photo.id);
         }
       }
       setSelectedPagePhotos(photoState);
@@ -258,11 +258,11 @@ export function MarketingApprovalClient() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [statusFilter]);
 
   useEffect(() => {
-    load();
-  }, [statusFilter]);
+    void load();
+  }, [load]);
 
   async function withCsrf() {
     const csrf = await fetch("/api/csrf").then((r) => r.json());
@@ -303,9 +303,9 @@ export function MarketingApprovalClient() {
       return;
     }
 
-    setApproveAllSummary(payload.summary ?? null);
+    const summary = payload.summary;
     const confirmed = window.confirm(
-      `Confirmer l'approbation explicite des 6 contenus pour ce logement ?\n\nCanaux: ${payload.summary?.channels?.map(formatSummaryLabel).join(", ") || "-"}\nPhotos: ${payload.summary?.photoCount ?? 0}\nChamps incomplets: ${payload.summary?.incompleteFields?.join(", ") || "aucun"}`,
+      `Confirmer l'approbation explicite des 6 contenus pour ce logement ?\n\nCanaux: ${summary?.channels?.map(formatSummaryLabel).join(", ") || "-"}\nPhotos: ${summary?.photoCount ?? 0}\nChamps incomplets: ${summary?.incompleteFields?.join(", ") || "aucun"}`,
     );
     if (!confirmed) return;
 
@@ -532,7 +532,7 @@ export function MarketingApprovalClient() {
   return (
     <section className="grid gap-4">
       <div>
-        <h2 className="font-[family-name:var(--font-barlow-condensed)] text-4xl font-bold">Centre d'approbation Facebook</h2>
+        <h2 className="font-[family-name:var(--font-barlow-condensed)] text-4xl font-bold">Centre d&apos;approbation Facebook</h2>
         <p className="text-sm text-emerald-800">Validation manuelle obligatoire avant publication, puis suivi des canaux Page / Marketplace / Groupes.</p>
       </div>
 
@@ -590,7 +590,7 @@ export function MarketingApprovalClient() {
 
       <div className="card grid gap-3 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-xl font-bold">File d'approbation</h3>
+          <h3 className="text-xl font-bold">File d&apos;approbation</h3>
           <div className="flex flex-wrap gap-2">
             <select className="rounded-lg border border-emerald-200 px-3 py-2 text-sm" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
               <option value="">Tous les statuts</option>
@@ -715,13 +715,13 @@ export function MarketingApprovalClient() {
                   Publier automatiquement
                 </button>
                 <button className="rounded-lg border border-sky-300 px-3 py-2 text-sm" onClick={() => confirmManualFacebook(ad.id)}>
-                  J'ai publie cette annonce
+                  J&apos;ai publie cette annonce
                 </button>
                 <button className="rounded-lg bg-[var(--accent)] px-3 py-2 text-sm text-white" onClick={() => prepareMarketplace(ad.id)}>
                   Preparer pour Marketplace
                 </button>
                 <button className="rounded-lg border border-emerald-300 px-3 py-2 text-sm" onClick={() => confirmMarketplacePublished(ad.id)}>
-                  J'ai publie sur Marketplace
+                  J&apos;ai publie sur Marketplace
                 </button>
                 <button className="rounded-lg border border-emerald-300 px-3 py-2 text-sm" onClick={() => loadGroupSuggestions(ad.id)}>
                   Preparer publication Groupes
@@ -785,7 +785,7 @@ export function MarketingApprovalClient() {
               </div>
 
               <p className="mt-2 text-xs text-emerald-800">
-                Mode recommande: ouvrez Facebook, collez le texte, ajoutez les photos selectionnees, publiez, puis cliquez sur "J'ai publie cette annonce" pour enregistrer le lien.
+                Mode recommande: ouvrez Facebook, collez le texte, ajoutez les photos selectionnees, publiez, puis cliquez sur &quot;J&apos;ai publie cette annonce&quot; pour enregistrer le lien.
               </p>
 
               {ad.publications.length > 0 ? (

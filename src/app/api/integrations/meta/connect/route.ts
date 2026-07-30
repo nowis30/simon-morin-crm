@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { env, getMetaConfigIssues } from "@/lib/env";
 import { connectMetaFromEnvToken, createMetaOAuthUrl, createMetaState } from "@/lib/meta-facebook";
 import { getPublicAppUrl } from "@/lib/public-url";
 import { requireApiUser, safeServerError } from "@/lib/route-guards";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const auth = await requireApiUser();
     if (auth.response) {

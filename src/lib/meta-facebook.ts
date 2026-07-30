@@ -1,5 +1,5 @@
 import { randomBytes } from "crypto";
-import { AdvertisementStatus, PublicationChannel } from "@prisma/client";
+import { AdvertisementStatus } from "@prisma/client";
 import { env, getMetaConfigIssues, isMetaConfigured } from "@/lib/env";
 import { getPublicAppUrl, getPublicListingPath, getPublicListingUrl } from "@/lib/public-url";
 import { getPublicFeatures } from "@/lib/public-listings";

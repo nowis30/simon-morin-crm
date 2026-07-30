@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type PreparationPayload = {
   advertisementId: string;
@@ -53,7 +53,7 @@ export function MarketplacePreparationClient({ advertisementId }: { advertisemen
     return { "Content-Type": "application/json", "x-csrf-token": csrf.token };
   }
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     setNotice(null);
@@ -78,11 +78,11 @@ export function MarketplacePreparationClient({ advertisementId }: { advertisemen
     } finally {
       setLoading(false);
     }
-  }
+  }, [advertisementId]);
 
   useEffect(() => {
-    load();
-  }, [advertisementId]);
+    void load();
+  }, [load]);
 
   function togglePhoto(photoId: string) {
     setSelectedPhotoIds((current) => {
@@ -255,7 +255,7 @@ export function MarketplacePreparationClient({ advertisementId }: { advertisemen
     <section className="grid gap-4">
       <div>
         <h2 className="font-[family-name:var(--font-barlow-condensed)] text-4xl font-bold">Preparer pour Marketplace</h2>
-        <p className="text-sm text-emerald-800">Aucune publication automatique n'est envoyee a Marketplace. Ce module cree un kit telechargeable.</p>
+        <p className="text-sm text-emerald-800">Aucune publication automatique n&apos;est envoyee a Marketplace. Ce module cree un kit telechargeable.</p>
       </div>
 
       <div className="card grid gap-2 p-4 text-sm">
@@ -333,7 +333,7 @@ export function MarketplacePreparationClient({ advertisementId }: { advertisemen
           {downloading ? "Creation du kit..." : "Telecharger le kit Marketplace"}
         </button>
         <button className="w-full rounded-lg border border-emerald-300 px-4 py-3 text-sm" onClick={confirmManualPublication}>
-          J'ai publie sur Marketplace
+          J&apos;ai publie sur Marketplace
         </button>
       </div>
 

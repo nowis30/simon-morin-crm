@@ -9,7 +9,6 @@ import { cleanText } from "@/lib/sanitize";
 import { fetchGestionIsrListings, inferGestionIsrMetadata, normalizeGestionIsrUnitStatus } from "@/integrations/gestion-isr/importer";
 
 const DEFAULT_GESTION_ISR_URL = "https://location.gestion-isr.com/";
-const PREVIEW_TTL_MINUTES = 30;
 
 function buildEntityCode(prefix: string, seed: string) {
   const normalizedSeed = seed.replace(/[^a-zA-Z0-9]+/g, "-").replace(/(^-|-$)/g, "");

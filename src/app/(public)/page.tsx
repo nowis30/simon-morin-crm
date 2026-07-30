@@ -114,7 +114,7 @@ export default async function HomePage() {
 
         {featuredItems.length === 0 ? (
           <p className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
-            Aucun logement n'est actuellement disponible. Revenez bientot pour consulter les nouvelles disponibilites.
+            Aucun logement n&apos;est actuellement disponible. Revenez bientot pour consulter les nouvelles disponibilites.
           </p>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

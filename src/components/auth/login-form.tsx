@@ -46,7 +46,7 @@ export function LoginForm() {
 
   return (
     <form onSubmit={onSubmit} className="card grid gap-4 p-6">
-      <h2 className="font-[family-name:var(--font-barlow-condensed)] text-2xl font-bold">Connexion</h2>
+      <h2 className="font-[family-name:var(--font-barlow-condensed)] text-2xl font-bold">Administration - Simon Morin Agent de location</h2>
       <input name="email" type="email" required placeholder="Courriel" className="rounded-lg border border-emerald-200 bg-white px-4 py-3" />
       <input name="password" type="password" required placeholder="Mot de passe" className="rounded-lg border border-emerald-200 bg-white px-4 py-3" />
       {error ? <p className="text-sm text-red-700">{error}</p> : null}

@@ -41,6 +41,64 @@ export function getPublicVisibilityForRentalUnit(input: { status: string; isPubl
   return isPublicPropertyVisible(input.status);
 }
 
+export function hasMinimumPublicListingData(input: {
+  address?: string | null;
+  city?: string | null;
+  monthlyPrice?: number | null;
+  propertyType?: string | null;
+  bedrooms?: number | null;
+  description?: string | null;
+}) {
+  return Boolean(
+    input.address?.trim() &&
+    input.city?.trim() &&
+    (input.monthlyPrice ?? 0) > 0 &&
+    input.propertyType?.trim() &&
+    (input.bedrooms ?? -1) >= 0 &&
+    input.description?.trim(),
+  );
+}
+
+export function isRentalUnitPubliclyAvailable(input: {
+  status: string;
+  isPubliclyVisible?: boolean | null;
+  address?: string | null;
+  city?: string | null;
+  monthlyPrice?: number | null;
+  propertyType?: string | null;
+  bedrooms?: number | null;
+  description?: string | null;
+}) {
+  if (input.isPubliclyVisible === false) {
+    return false;
+  }
+  if (input.status !== "AVAILABLE") {
+    return false;
+  }
+  if (!isPublicPropertyVisible(input.status)) {
+    return false;
+  }
+  return hasMinimumPublicListingData(input);
+}
+
+export function isPropertyPubliclyAvailable(input: {
+  status: string;
+  address?: string | null;
+  city?: string | null;
+  monthlyPrice?: number | null;
+  propertyType?: string | null;
+  bedrooms?: number | null;
+  description?: string | null;
+}) {
+  if (input.status !== "AVAILABLE") {
+    return false;
+  }
+  if (!isPublicPropertyVisible(input.status)) {
+    return false;
+  }
+  return hasMinimumPublicListingData(input);
+}
+
 export type ListingPhotoCategory = "UNIT" | "BUILDING" | "COMMON" | "STAGED" | "PLAN" | "UNKNOWN";
 
 export type ListingPhoto = {

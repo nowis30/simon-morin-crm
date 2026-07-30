@@ -10,6 +10,11 @@ import { propertyCreateSchema, propertyFilterSchema } from "@/lib/validators";
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireApiUser();
+    if (auth.response) {
+      return auth.response;
+    }
+
     const params = Object.fromEntries(request.nextUrl.searchParams.entries());
     const filters = propertyFilterSchema.parse(params);
 

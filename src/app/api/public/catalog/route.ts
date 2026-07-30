@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { dedupeListingPhotos, formatPublicAddress, getPublicFeatures, getPublicVisibilityForRentalUnit, isPublicPropertyVisible, type ListingPhoto } from "@/lib/public-listings";
+import { dedupeListingPhotos, formatPublicAddress, getPublicFeatures, isPropertyPubliclyAvailable, isRentalUnitPubliclyAvailable, type ListingPhoto } from "@/lib/public-listings";
 
 export async function GET() {
   const rentalUnits = await prisma.rentalUnit.findMany({
@@ -15,7 +15,18 @@ export async function GET() {
 
   const items = rentalUnits.length
     ? rentalUnits
-        .filter((unit) => getPublicVisibilityForRentalUnit({ status: unit.status, isPubliclyVisible: unit.isPubliclyVisible }))
+        .filter((unit) =>
+          isRentalUnitPubliclyAvailable({
+            status: unit.status,
+            isPubliclyVisible: unit.isPubliclyVisible,
+            address: unit.building.address,
+            city: unit.building.city,
+            monthlyPrice: unit.monthlyPrice,
+            propertyType: unit.propertyType,
+            bedrooms: unit.bedrooms,
+            description: unit.publicDescription || unit.description,
+          }),
+        )
         .map((unit) => {
           const unitPhotos: ListingPhoto[] = unit.photos.map((photo) => ({
             url: photo.url,
@@ -31,23 +42,22 @@ export async function GET() {
 
           return {
             id: unit.id,
-            codeIsr: unit.codeIsr,
             address: formatPublicAddress(unit.building.address),
             city: unit.building.city,
             district: unit.building.district,
             monthlyPrice: unit.monthlyPrice,
             bedrooms: unit.bedrooms,
             propertyType: unit.propertyType,
-            status: unit.status,
             imageUrl: unit.primaryPhotoUrl || galleryPhotos[0]?.url || null,
             photoCount: galleryPhotos.length,
+            petsAllowed: unit.petsAllowed,
+            parking: unit.parking,
+            inclusions: unit.inclusions,
             features: getPublicFeatures({
               petsAllowed: unit.petsAllowed,
               parking: unit.parking,
               inclusions: unit.inclusions,
             }),
-            building: unit.building ? { name: unit.building.name, address: unit.building.address, city: unit.building.city, district: unit.building.district } : null,
-            rentalUnit: { unitNumber: unit.unitNumber, floor: unit.floor },
           };
         })
     : await prisma.property.findMany({
@@ -57,7 +67,17 @@ export async function GET() {
         include: { photos: { orderBy: { sortOrder: "asc" }, take: 12 } },
       }).then((properties) =>
         properties
-          .filter((property) => isPublicPropertyVisible(property.status))
+          .filter((property) =>
+            isPropertyPubliclyAvailable({
+              status: property.status,
+              address: property.address,
+              city: property.city,
+              monthlyPrice: property.monthlyPrice,
+              propertyType: property.propertyType,
+              bedrooms: property.bedrooms,
+              description: property.descriptionFr,
+            }),
+          )
           .map((property) => {
             const galleryPhotos = dedupeListingPhotos(
               property.photos.map((photo) => ({
@@ -69,23 +89,22 @@ export async function GET() {
 
             return {
               id: property.id,
-              codeIsr: property.codeIsr,
               address: formatPublicAddress(property.address),
               city: property.city,
               district: property.district,
               monthlyPrice: property.monthlyPrice,
               bedrooms: property.bedrooms,
               propertyType: property.propertyType,
-              status: property.status,
               imageUrl: galleryPhotos[0]?.url ?? null,
               photoCount: galleryPhotos.length,
+              petsAllowed: property.petsAllowed,
+              parking: property.parking,
+              inclusions: property.inclusions,
               features: getPublicFeatures({
                 petsAllowed: property.petsAllowed,
                 parking: property.parking,
                 inclusions: property.inclusions,
               }),
-              building: null,
-              rentalUnit: null,
             };
           }),
       );

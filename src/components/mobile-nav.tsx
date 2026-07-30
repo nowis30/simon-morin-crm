@@ -6,7 +6,7 @@ import { useState } from "react";
 
 const links = [
   { href: "/dashboard", label: "Tableau de bord" },
-  { href: "/properties", label: "Logements" },
+  { href: "/admin/logements", label: "Gestion des logements" },
   { href: "/prospects", label: "Prospects" },
   { href: "/matches", label: "Correspondances" },
   { href: "/marketing", label: "Marketing" },
@@ -43,6 +43,12 @@ export function MobileNav() {
               {link.label}
             </Link>
           ))}
+          <Link href="/" className="rounded-lg border border-emerald-200 px-3 py-2 text-sm" onClick={() => setOpen(false)}>
+            Voir le site public
+          </Link>
+          <Link href="/logements" className="rounded-lg border border-emerald-200 px-3 py-2 text-sm" onClick={() => setOpen(false)}>
+            Voir les logements publics
+          </Link>
           <form action="/api/auth/logout" method="post">
             <button className="w-full rounded-lg border border-emerald-200 px-3 py-2 text-left text-sm">Deconnexion</button>
           </form>

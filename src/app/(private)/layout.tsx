@@ -1,9 +1,16 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { getCurrentUser, hasAnyAdmin } from "@/lib/auth";
 import { MobileNav } from "@/components/mobile-nav";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 const links = [
   { href: "/dashboard", label: "Tableau de bord" },
@@ -40,6 +47,12 @@ export default async function PrivateLayout({ children }: { children: React.Reac
           <p className="text-sm text-emerald-800">Gestion ISR - version initiale</p>
         </div>
         <div className="hidden items-center gap-2 md:flex">
+          <Link href="/" className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold">
+            Voir le site public
+          </Link>
+          <Link href="/logements" className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold">
+            Voir les logements publics
+          </Link>
           <span className="rounded-md bg-white/80 px-3 py-2 text-sm">{user.email}</span>
           <form action="/api/auth/logout" method="post">
             <button className="rounded-lg bg-white px-4 py-2 text-sm font-semibold">Deconnexion</button>

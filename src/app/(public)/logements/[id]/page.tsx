@@ -1,9 +1,38 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { ListingPhotoGallery } from "@/components/public/listing-photo-gallery";
 import { VisitRequestForm } from "@/components/public/visit-request-form";
-import { dedupeListingPhotos, formatPublicAddress, getPublicFeatures, getPublicVisibilityForRentalUnit, isPublicPropertyVisible, type ListingPhoto } from "@/lib/public-listings";
+import { dedupeListingPhotos, formatPublicAddress, getPublicFeatures, isPropertyPubliclyAvailable, isRentalUnitPubliclyAvailable, type ListingPhoto } from "@/lib/public-listings";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  return {
+    title: "Fiche logement",
+    description:
+      "Decouvrez les logements disponibles a Drummondville et dans les environs. Consultez les photos, les caracteristiques et envoyez votre demande de visite.",
+    alternates: {
+      canonical: `/logements/${id}`,
+    },
+    openGraph: {
+      title: "Logements a louer a Drummondville | Simon Morin",
+      description:
+        "Decouvrez les logements disponibles a Drummondville et dans les environs. Consultez les photos, les caracteristiques et envoyez votre demande de visite.",
+      url: `/logements/${id}`,
+      images: [
+        {
+          url: "/annonce.png",
+          width: 1200,
+          height: 630,
+          alt: "Logements a louer a Drummondville",
+        },
+      ],
+      locale: "fr_CA",
+      type: "website",
+    },
+  };
+}
 
 export default async function PublicListingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -17,7 +46,16 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
   });
 
   if (rentalUnit) {
-    const isUnavailable = !getPublicVisibilityForRentalUnit({ status: rentalUnit.status, isPubliclyVisible: rentalUnit.isPubliclyVisible });
+    const isUnavailable = !isRentalUnitPubliclyAvailable({
+      status: rentalUnit.status,
+      isPubliclyVisible: rentalUnit.isPubliclyVisible,
+      address: rentalUnit.building.address,
+      city: rentalUnit.building.city,
+      monthlyPrice: rentalUnit.monthlyPrice,
+      propertyType: rentalUnit.propertyType,
+      bedrooms: rentalUnit.bedrooms,
+      description: rentalUnit.publicDescription || rentalUnit.description,
+    });
     const linkedProperty = await prisma.property.findFirst({ where: { rentalUnitId: rentalUnit.id } });
 
     const unitPhotos: ListingPhoto[] = rentalUnit.photos.map((photo) => ({
@@ -41,6 +79,7 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
       bedrooms: rentalUnit.bedrooms,
       propertyType: rentalUnit.propertyType,
       description: rentalUnit.publicDescription || rentalUnit.description,
+      availabilityLabel: isUnavailable ? "Indisponible" : "Disponible",
       features: getPublicFeatures({
         petsAllowed: rentalUnit.petsAllowed,
         parking: rentalUnit.parking,
@@ -73,6 +112,7 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <div><p className="text-sm text-slate-400">Prix</p><p className="text-xl font-semibold">{item.monthlyPrice.toLocaleString("fr-CA")} $ / mois</p></div>
                   <div><p className="text-sm text-slate-400">Type</p><p className="text-xl font-semibold">{item.propertyType} · {item.bedrooms} chambre{item.bedrooms > 1 ? "s" : ""}</p></div>
+                  <div><p className="text-sm text-slate-400">Disponibilite</p><p className="text-xl font-semibold">{item.availabilityLabel}</p></div>
                 </div>
                 <div className="mt-6 text-sm text-slate-300">
                   <p className="font-medium text-white">Caractéristiques</p>
@@ -111,7 +151,15 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
     include: { photos: { orderBy: { sortOrder: "asc" } } },
   });
 
-  if (!property || !isPublicPropertyVisible(property.status)) {
+  if (!property || !isPropertyPubliclyAvailable({
+    status: property.status,
+    address: property.address,
+    city: property.city,
+    monthlyPrice: property.monthlyPrice,
+    propertyType: property.propertyType,
+    bedrooms: property.bedrooms,
+    description: property.descriptionFr,
+  })) {
     notFound();
   }
 
@@ -124,6 +172,7 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
     bedrooms: property.bedrooms,
     propertyType: property.propertyType,
     description: property.descriptionFr,
+    availabilityLabel: "Disponible",
     features: getPublicFeatures({
       petsAllowed: property.petsAllowed,
       parking: property.parking,
@@ -153,6 +202,7 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <div><p className="text-sm text-slate-400">Prix</p><p className="text-xl font-semibold">{fallbackItem.monthlyPrice.toLocaleString("fr-CA")} $ / mois</p></div>
                 <div><p className="text-sm text-slate-400">Type</p><p className="text-xl font-semibold">{fallbackItem.propertyType} · {fallbackItem.bedrooms} chambre{fallbackItem.bedrooms > 1 ? "s" : ""}</p></div>
+                <div><p className="text-sm text-slate-400">Disponibilite</p><p className="text-xl font-semibold">{fallbackItem.availabilityLabel}</p></div>
               </div>
               <div className="mt-6 text-sm text-slate-300">
                 <p className="font-medium text-white">Caractéristiques</p>

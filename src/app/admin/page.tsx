@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { LoginForm } from "@/components/auth/login-form";
 import { getCurrentUser, hasAnyAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -11,22 +10,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function LoginPage() {
+export default async function AdminEntryPage() {
   const adminExists = await hasAnyAdmin();
   if (!adminExists) {
     redirect("/setup");
   }
 
   const user = await getCurrentUser();
-  if (user) {
-    redirect("/dashboard");
+  if (!user) {
+    redirect("/login?next=/admin");
   }
 
-  return (
-    <div className="shell-bg flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <LoginForm />
-      </div>
-    </div>
-  );
+  redirect("/dashboard");
 }

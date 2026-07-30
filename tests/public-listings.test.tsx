@@ -28,6 +28,8 @@ describe("public listing catalog", () => {
         propertyType: "Appartement",
         status: "AVAILABLE",
         isPubliclyVisible: true,
+        description: "Grand 4 et demi",
+        publicDescription: "Grand 4 et demi",
         petsAllowed: true,
         parking: false,
         inclusions: "",

@@ -8,15 +8,15 @@ import { prisma } from "@/lib/prisma";
 const { prismaMock, writeAuditLogMock } = vi.hoisted(() => ({
   prismaMock: {
     property: { findUnique: vi.fn() },
-    prospect: { create: vi.fn() },
-    visit: { create: vi.fn() },
+    prospect: { create: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
+    visit: { create: vi.fn(), findUnique: vi.fn() },
     gestionIsrSyncPreview: { create: vi.fn() },
     building: { create: vi.fn() },
     rentalUnit: { create: vi.fn() },
   } as unknown as {
     property: { findUnique: ReturnType<typeof vi.fn> };
-    prospect: { create: ReturnType<typeof vi.fn> };
-    visit: { create: ReturnType<typeof vi.fn> };
+    prospect: { create: ReturnType<typeof vi.fn>; findFirst: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
+    visit: { create: ReturnType<typeof vi.fn>; findUnique: ReturnType<typeof vi.fn> };
     gestionIsrSyncPreview: { create: ReturnType<typeof vi.fn> };
     building: { create: ReturnType<typeof vi.fn> };
     rentalUnit: { create: ReturnType<typeof vi.fn> };
@@ -55,6 +55,9 @@ describe("gestion ISR preview/apply", () => {
       status: "AVAILABLE",
     });
     prismaMock.prospect.create.mockResolvedValue({ id: "prospect-1" });
+    prismaMock.prospect.findFirst.mockResolvedValue(null);
+    prismaMock.prospect.update.mockResolvedValue({ id: "prospect-1" });
+    prismaMock.visit.findUnique.mockResolvedValue(null);
     prismaMock.visit.create.mockResolvedValue({
       id: "visit-1",
       propertyId: "property-1",

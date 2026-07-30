@@ -2,14 +2,27 @@ import { NextRequest, NextResponse } from "next/server";
 import { AUTH_COOKIE_NAME } from "@/lib/auth";
 
 const PUBLIC_PATHS = [
+  "/",
+  "/logements",
+  "/catalog",
   "/login",
   "/setup",
   "/privacy",
   "/data-deletion",
-  "/api/health",
-  "/api/auth/login",
-  "/api/setup",
   "/manifest.webmanifest",
+  "/sw.js",
+  "/workbox-4754cb34.js",
+  "/icons",
+];
+
+const PUBLIC_API_PATHS = [
+  "/api/public",
+  "/api/health",
+  "/api/csrf",
+  "/api/auth/login",
+  "/api/auth/logout",
+  "/api/setup",
+  "/api/integrations/meta/webhook",
 ];
 
 export function middleware(request: NextRequest) {
@@ -19,9 +32,16 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const isPublic = PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
-  if (isPublic) {
-    return NextResponse.next();
+  if (pathname.startsWith("/api")) {
+    const isPublicApi = PUBLIC_API_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+    if (isPublicApi) {
+      return NextResponse.next();
+    }
+  } else {
+    const isPublic = PUBLIC_PATHS.some((path) => path === "/" ? pathname === "/" : pathname === path || pathname.startsWith(`${path}/`));
+    if (isPublic) {
+      return NextResponse.next();
+    }
   }
 
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;

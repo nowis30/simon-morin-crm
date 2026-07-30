@@ -108,6 +108,14 @@ export default function MarketingPage() {
   }, []);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const propertyId = params.get("propertyId");
+    if (propertyId) {
+      setSelectedProperty(propertyId);
+    }
+  }, []);
+
+  useEffect(() => {
     const handler = (event: BeforeUnloadEvent) => {
       if (!hasUnsavedChanges) {
         return;
@@ -636,6 +644,9 @@ export default function MarketingPage() {
             <p className="whitespace-pre-wrap text-sm">{ad.body}</p>
             <div className="flex flex-wrap gap-2">
               <CopyButton text={ad.body} label="Copier" />
+              <a href={`/marketing/marketplace/${ad.id}`} className="rounded-lg bg-[var(--accent)] px-3 py-2 text-sm text-white">
+                Preparer pour Marketplace
+              </a>
               <button className="rounded-lg border border-emerald-200 px-3 py-2 text-sm" onClick={() => updateStatus(ad.id, "PUBLISHED")}>
                 Marquer Publiee
               </button>

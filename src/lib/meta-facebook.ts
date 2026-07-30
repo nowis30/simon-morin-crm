@@ -1,5 +1,5 @@
 import { randomBytes } from "crypto";
-import { AdvertisementStatus } from "@prisma/client";
+import { AdvertisementStatus, PublicationChannel } from "@prisma/client";
 import { env, getMetaConfigIssues, isMetaConfigured } from "@/lib/env";
 import { getPublicListingPath, getPublicListingUrl } from "@/lib/public-url";
 import { getPublicFeatures } from "@/lib/public-listings";
@@ -16,6 +16,14 @@ const MAX_PHOTOS_PER_PUBLICATION = 10;
 const OFFICIAL_PUBLIC_PHONE = "819-388-3407";
 const OFFICIAL_PUBLIC_EMAIL = "simonmorin@nowis.store";
 
+const ALLOWED_FACEBOOK_PUBLICATION_HOSTS = [
+  "facebook.com",
+  "www.facebook.com",
+  "m.facebook.com",
+  "fb.com",
+  "www.fb.com",
+] as const;
+
 export const REQUIRED_META_SCOPES = ["pages_show_list", "pages_read_engagement", "pages_manage_posts"] as const;
 
 type MetaGraphError = {
@@ -29,7 +37,22 @@ type MetaGraphError = {
 type MetaResponsePayload = {
   id?: string;
   post_id?: string;
+  permalink_url?: string;
   error?: MetaGraphError;
+};
+
+type PublicationTarget = {
+  listingId: string;
+  listingPath: string;
+  listingUrl: string;
+};
+
+export type ManualPublicationPayload = {
+  message: string;
+  listingUrl: string;
+  facebookOpenUrl: string;
+  photoUrls: string[];
+  primaryPhotoUrl: string | null;
 };
 
 export type MetaDiagnosticResult = {
@@ -75,7 +98,7 @@ function formatMetaError(error: ReturnType<typeof parseMetaError>) {
     return "Le jeton de Page Facebook est expire.";
   }
 
-  if (error.message.toLowerCase().includes("permission")) {
+  if (error.message.toLowerCase().includes("permission") || error.code === 10) {
     return "La permission pages_manage_posts est absente.";
   }
 
@@ -90,6 +113,7 @@ function buildMetaErrorDetails(error: ReturnType<typeof parseMetaError>) {
   if (!error) {
     return null;
   }
+
   return JSON.stringify({
     message: error.message,
     type: error.type ?? null,
@@ -136,14 +160,31 @@ function buildFingerprint(title: string, message: string, photoUrls: string[]) {
   return `${title.trim()}|${message.trim()}|${photoUrls.join("|")}`.toLowerCase();
 }
 
-function maskAddressInText(input: string) {
-  return cleanText(input)
-    .replace(/\b\d{1,6}\s+[\p{L}\d'’.-]+(?:\s+[\p{L}\d'’.-]+){0,5}/gu, "")
+function extractPublicTitle(input: string) {
+  const normalized = cleanText(input)
+    .replace(/\b\d{1,6}\s+[^\n]+/g, "")
     .replace(/\s{2,}/g, " ")
     .trim();
+  return normalized || "Logement disponible";
 }
 
-function buildPublicationMessage(ad: {
+function formatAvailability(availableFrom: Date | null | undefined) {
+  if (!availableFrom) {
+    return "Disponibilite: a confirmer";
+  }
+  return `Disponibilite: ${availableFrom.toLocaleDateString("fr-CA")}`;
+}
+
+function buildPublicationTarget(property: { id: string; rentalUnitId: string | null }) {
+  const listingId = property.rentalUnitId ?? property.id;
+  return {
+    listingId,
+    listingPath: getPublicListingPath(listingId),
+    listingUrl: getPublicListingUrl(listingId),
+  } as PublicationTarget;
+}
+
+export function buildManualFacebookText(input: {
   title: string;
   property: {
     id: string;
@@ -156,43 +197,62 @@ function buildPublicationMessage(ad: {
     petsAllowed: boolean;
     parking: boolean;
     inclusions: string | null;
+    availableFrom: Date | null;
+    address: string;
   };
 }) {
-  const listingId = ad.property.rentalUnitId ?? ad.property.id;
-  const listingPath = getPublicListingPath(listingId);
-  const listingUrl = getPublicListingUrl(listingId);
-  const publicTitle = maskAddressInText(ad.title) || "Logement disponible";
-  const locationLabel = ad.property.district ? `${ad.property.city} - ${ad.property.district}` : ad.property.city;
+  const target = buildPublicationTarget(input.property);
+  const title = extractPublicTitle(input.title);
+  const locationLabel = input.property.district ? `${input.property.city} - ${input.property.district}` : input.property.city;
+
   const features = getPublicFeatures({
-    petsAllowed: ad.property.petsAllowed,
-    parking: ad.property.parking,
-    inclusions: ad.property.inclusions,
+    petsAllowed: input.property.petsAllowed,
+    parking: input.property.parking,
+    inclusions: input.property.inclusions,
   }).slice(0, 4);
 
   const lines = [
-    publicTitle,
-    `${ad.property.monthlyPrice.toLocaleString("fr-CA")} $ / mois`,
-    `${ad.property.bedrooms} chambre${ad.property.bedrooms > 1 ? "s" : ""} · ${ad.property.propertyType}`,
+    `🏠 ${title}`,
+    "",
+    `${input.property.monthlyPrice.toLocaleString("fr-CA")} $ / mois`,
+    `${input.property.bedrooms} chambre${input.property.bedrooms > 1 ? "s" : ""}`,
     locationLabel,
+    `Type: ${cleanText(input.property.propertyType)}`,
+    `Animaux: ${input.property.petsAllowed ? "acceptes" : "non acceptes"}`,
+    `Stationnement: ${input.property.parking ? "inclus" : "non inclus"}`,
+    formatAvailability(input.property.availableFrom),
     features.length > 0 ? `Caracteristiques: ${features.join(" · ")}` : null,
-    "Demandez votre visite des maintenant.",
-    listingUrl,
+    "",
+    "Consultez toutes les photos et envoyez votre demande de visite :",
+    "",
+    target.listingUrl,
+    "",
+    "Simon Morin — Agent de location",
     `Telephone: ${OFFICIAL_PUBLIC_PHONE}`,
     `Courriel: ${OFFICIAL_PUBLIC_EMAIL}`,
   ].filter(Boolean);
 
+  const fullText = lines.join("\n");
+  const fullAddress = cleanText(input.property.address);
+  if (fullAddress && fullText.toLowerCase().includes(fullAddress.toLowerCase())) {
+    throw new Error("Le texte public contient une adresse privee complete.");
+  }
+
   return {
-    listingId,
-    listingPath,
-    listingUrl,
-    message: lines.join("\n"),
+    ...target,
+    message: fullText,
   };
 }
 
-async function fetchMetaJson<T>(url: string, init?: RequestInit) {
-  const response = await fetch(url, init);
-  const payload = (await response.json().catch(() => ({}))) as T & MetaResponsePayload;
-  return { response, payload };
+function buildManualFacebookOpenUrl(target: PublicationTarget) {
+  const pageUrl = env.META_PAGE_URL?.trim();
+  if (pageUrl && isHttpUrl(pageUrl)) {
+    return pageUrl;
+  }
+
+  const share = new URL("https://www.facebook.com/sharer/sharer.php");
+  share.searchParams.set("u", target.listingUrl);
+  return share.toString();
 }
 
 function ensureRequiredMetaConfig() {
@@ -203,6 +263,21 @@ function ensureRequiredMetaConfig() {
   if (!env.META_PAGE_ID) issues.push("META_PAGE_ID manquant");
   if (!env.META_TOKEN_ENCRYPTION_KEY) issues.push("META_TOKEN_ENCRYPTION_KEY manquant");
   return issues;
+}
+
+export function validateFacebookPublicationUrl(url: string) {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+
+  if (!ALLOWED_FACEBOOK_PUBLICATION_HOSTS.includes(parsed.hostname as (typeof ALLOWED_FACEBOOK_PUBLICATION_HOSTS)[number])) {
+    return false;
+  }
+
+  return parsed.protocol === "https:";
 }
 
 export function createMetaState(userId: string) {
@@ -244,6 +319,12 @@ export function createMetaOAuthUrl(state: string) {
   return `${OAUTH_BASE}?${query.toString()}`;
 }
 
+async function fetchMetaJson<T>(url: string, init?: RequestInit) {
+  const response = await fetch(url, init);
+  const payload = (await response.json().catch(() => ({}))) as T & MetaResponsePayload;
+  return { response, payload };
+}
+
 export async function exchangeMetaCodeForToken(code: string) {
   if (!env.META_APP_ID || !env.META_APP_SECRET || !env.META_REDIRECT_URI) {
     throw new Error("Configuration OAuth Meta incomplete");
@@ -272,9 +353,7 @@ async function fetchPageTokenFromUserToken(userToken: string) {
   }
 
   const query = new URLSearchParams({ access_token: userToken, fields: "id,name,access_token" });
-  const { response, payload } = await fetchMetaJson<{ data?: Array<{ id: string; name: string; access_token: string }> }>(
-    `${GRAPH_BASE}/me/accounts?${query.toString()}`,
-  );
+  const { response, payload } = await fetchMetaJson<{ data?: Array<{ id: string; name: string; access_token: string }> }>(`${GRAPH_BASE}/me/accounts?${query.toString()}`);
 
   if (!response.ok) {
     const error = parseMetaError(payload);
@@ -372,6 +451,157 @@ async function resolveMetaTokens(userId: string) {
   };
 }
 
+async function getAdvertisementForPagePublication(advertisementId: string) {
+  return prisma.advertisement.findUnique({
+    where: { id: advertisementId },
+    include: {
+      property: { include: { photos: { orderBy: { sortOrder: "asc" } } } },
+      selectedPhotos: {
+        where: { channel: "PAGE", excluded: false },
+        orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }],
+        include: { propertyPhoto: true },
+      },
+      publications: { where: { channel: "PAGE" }, orderBy: { createdAt: "desc" } },
+    },
+  });
+}
+
+function assertAdvertisementReadyForFacebook(ad: Awaited<ReturnType<typeof getAdvertisementForPagePublication>>) {
+  if (!ad || !ad.property) {
+    throw new Error("Annonce introuvable");
+  }
+
+  if (ad.status !== AdvertisementStatus.APPROVED) {
+    throw new Error("Annonce non approuvee");
+  }
+
+  if (["RENTED", "REMOVED", "TO_VERIFY", "ARCHIVED"].includes(ad.property.status)) {
+    throw new Error("Le logement n'est plus disponible pour publication");
+  }
+
+  if (!ad.title.trim()) {
+    throw new Error("Titre vide");
+  }
+
+  if (!ad.body.trim()) {
+    throw new Error("Texte vide");
+  }
+
+  if (!ad.property.monthlyPrice) {
+    throw new Error("Prix manquant");
+  }
+
+  return ad;
+}
+
+function getSelectedPhotoUrls(ad: NonNullable<Awaited<ReturnType<typeof getAdvertisementForPagePublication>>>) {
+  const rawPhotoUrls = ad.selectedPhotos.length > 0
+    ? ad.selectedPhotos.map((item) => item.propertyPhoto.url)
+    : ad.property!.photos.map((photo) => photo.url);
+  return dedupePhotoUrls(rawPhotoUrls);
+}
+
+export async function prepareManualFacebookPublication(params: { advertisementId: string; userId: string }) {
+  const ad = assertAdvertisementReadyForFacebook(await getAdvertisementForPagePublication(params.advertisementId));
+
+  const prepared = buildManualFacebookText({
+    title: ad.title,
+    property: {
+      id: ad.property!.id,
+      rentalUnitId: ad.property!.rentalUnitId,
+      monthlyPrice: ad.property!.monthlyPrice,
+      bedrooms: ad.property!.bedrooms,
+      city: ad.property!.city,
+      district: ad.property!.district,
+      propertyType: ad.property!.propertyType,
+      petsAllowed: ad.property!.petsAllowed,
+      parking: ad.property!.parking,
+      inclusions: ad.property!.inclusions,
+      availableFrom: ad.property!.availableFrom,
+      address: ad.property!.address,
+    },
+  });
+
+  const photoUrls = getSelectedPhotoUrls(ad);
+  const facebookOpenUrl = buildManualFacebookOpenUrl(prepared);
+
+  await prisma.advertisementPublication.create({
+    data: {
+      advertisementId: ad.id,
+      channel: "PAGE",
+      status: AdvertisementStatus.MANUAL_ACTION_REQUIRED,
+      destination: prepared.listingPath,
+      checklist: {
+        manualPreparationOpenedAt: new Date().toISOString(),
+        selectedPhotoUrls: photoUrls,
+        facebookOpenUrl,
+      },
+      errorMessage: null,
+    },
+  });
+
+  await prisma.advertisement.update({
+    where: { id: ad.id },
+    data: {
+      status: AdvertisementStatus.MANUAL_ACTION_REQUIRED,
+      publicationChannel: "PAGE",
+      requiresManualAction: true,
+      publishedByUserId: params.userId,
+      latestErrorMessage: null,
+    },
+  });
+
+  return {
+    message: prepared.message,
+    listingUrl: prepared.listingUrl,
+    facebookOpenUrl,
+    photoUrls,
+    primaryPhotoUrl: photoUrls[0] ?? null,
+  } as ManualPublicationPayload;
+}
+
+export async function confirmManualFacebookPublication(params: { advertisementId: string; userId: string; publicationUrl: string }) {
+  const publicationUrl = cleanText(params.publicationUrl);
+  if (!validateFacebookPublicationUrl(publicationUrl)) {
+    throw new Error("URL Facebook invalide. Utilisez un lien public Facebook valide en https.");
+  }
+
+  const ad = await prisma.advertisement.findUnique({ where: { id: params.advertisementId } });
+  if (!ad) {
+    throw new Error("Annonce introuvable");
+  }
+
+  const publication = await prisma.advertisementPublication.create({
+    data: {
+      advertisementId: ad.id,
+      channel: "PAGE",
+      status: AdvertisementStatus.PUBLISHED,
+      destination: publicationUrl,
+      publicationUrl,
+      checklist: {
+        manualConfirmedAt: new Date().toISOString(),
+      },
+      publishedAt: new Date(),
+      errorMessage: null,
+    },
+  });
+
+  await prisma.advertisement.update({
+    where: { id: ad.id },
+    data: {
+      status: AdvertisementStatus.PUBLISHED,
+      publicationChannel: "PAGE",
+      publicationUrl,
+      publishedAt: new Date(),
+      publishedByUserId: params.userId,
+      requiresManualAction: false,
+      latestErrorMessage: null,
+    },
+  });
+
+  return publication;
+}
+
 export async function getMetaDiagnostic(userId: string): Promise<MetaDiagnosticResult> {
   const configIssues = ensureRequiredMetaConfig();
   const issues = [...configIssues];
@@ -433,9 +663,7 @@ export async function getMetaDiagnostic(userId: string): Promise<MetaDiagnosticR
       access_token: userToken,
       fields: "id,name,perms",
     });
-    const accountsResult = await fetchMetaJson<{ data?: Array<{ id: string; name: string; perms?: string[] }> }>(
-      `${GRAPH_BASE}/me/accounts?${accountsQuery.toString()}`,
-    );
+    const accountsResult = await fetchMetaJson<{ data?: Array<{ id: string; name: string; perms?: string[] }> }>(`${GRAPH_BASE}/me/accounts?${accountsQuery.toString()}`);
 
     if (accountsResult.response.ok) {
       const page = (accountsResult.payload.data ?? []).find((item) => item.id === env.META_PAGE_ID);
@@ -530,13 +758,15 @@ export async function getMetaStatus(userId: string) {
   };
 }
 
-async function publishFeed(params: {
-  pageId: string;
-  pageToken: string;
-  message: string;
-  link: string;
-  attachedMedia?: string[];
-}) {
+async function getMetaPageToken(userId: string) {
+  const tokenResult = await resolveMetaTokens(userId);
+  if (!tokenResult.pageToken) {
+    throw new Error("Connexion a la Page Facebook non configuree");
+  }
+  return tokenResult.pageToken;
+}
+
+async function publishFeed(params: { pageId: string; pageToken: string; message: string; link: string; attachedMedia?: string[] }) {
   const body = new URLSearchParams({
     message: params.message,
     link: params.link,
@@ -562,11 +792,7 @@ async function publishFeed(params: {
   return result.payload.id;
 }
 
-async function uploadUnpublishedPhoto(params: {
-  pageId: string;
-  pageToken: string;
-  url: string;
-}) {
+async function uploadUnpublishedPhoto(params: { pageId: string; pageToken: string; url: string }) {
   const body = new URLSearchParams({
     url: params.url,
     published: "false",
@@ -586,12 +812,7 @@ async function uploadUnpublishedPhoto(params: {
   return result.payload.id;
 }
 
-async function publishSinglePhoto(params: {
-  pageId: string;
-  pageToken: string;
-  message: string;
-  photoUrl: string;
-}) {
+async function publishSinglePhoto(params: { pageId: string; pageToken: string; message: string; photoUrl: string }) {
   const body = new URLSearchParams({
     url: params.photoUrl,
     caption: params.message,
@@ -605,19 +826,33 @@ async function publishSinglePhoto(params: {
     body,
   });
 
-  if (!result.response.ok || !result.payload.post_id) {
+  if (!result.response.ok || (!result.payload.post_id && !result.payload.id)) {
     throw parseMetaError(result.payload) ?? { message: "Meta a refuse la photo principale." };
   }
 
-  return result.payload.post_id;
+  return result.payload.post_id || result.payload.id!;
 }
 
-async function finalizeFailure(params: {
-  advertisementId: string;
-  publicationId: string;
-  message: string;
-  details?: string | null;
-}) {
+async function resolvePermalinkUrl(params: { pageToken: string; publicationId: string }) {
+  const query = new URLSearchParams({
+    fields: "permalink_url",
+    access_token: params.pageToken,
+  });
+
+  const result = await fetchMetaJson<{ permalink_url?: string }>(`${GRAPH_BASE}/${params.publicationId}?${query.toString()}`);
+  if (!result.response.ok) {
+    return null;
+  }
+
+  const permalink = result.payload.permalink_url?.trim();
+  if (!permalink || !isHttpUrl(permalink)) {
+    return null;
+  }
+
+  return permalink;
+}
+
+async function finalizeFailure(params: { advertisementId: string; publicationId: string; message: string; details?: string | null }) {
   await prisma.$transaction([
     prisma.advertisement.update({
       where: { id: params.advertisementId },
@@ -625,78 +860,38 @@ async function finalizeFailure(params: {
     }),
     prisma.advertisementPublication.update({
       where: { id: params.publicationId },
-      data: {
-        status: AdvertisementStatus.FAILED,
-        errorMessage: params.details || params.message,
-      },
+      data: { status: AdvertisementStatus.FAILED, errorMessage: params.details || params.message },
     }),
   ]);
 }
 
-export async function publishAdvertisementToMetaPage(params: {
-  advertisementId: string;
-  userId: string;
-  idempotencyKey: string;
-}) {
-  const ad = await prisma.advertisement.findUnique({
-    where: { id: params.advertisementId },
-    include: {
-      property: { include: { photos: { orderBy: { sortOrder: "asc" } } } },
-      selectedPhotos: {
-        where: { channel: "PAGE", excluded: false },
-        orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }],
-        include: { propertyPhoto: true },
-      },
-      publications: { where: { channel: "PAGE" }, orderBy: { createdAt: "desc" } },
-    },
-  });
-
-  if (!ad || !ad.property) {
-    throw new Error("Annonce introuvable");
-  }
-
-  if (ad.status !== AdvertisementStatus.APPROVED) {
-    throw new Error("Annonce non approuvee");
-  }
-
-  if (["RENTED", "REMOVED", "TO_VERIFY", "ARCHIVED"].includes(ad.property.status)) {
-    throw new Error("Le logement n'est plus disponible pour publication");
-  }
+export async function publishAdvertisementToMetaPage(params: { advertisementId: string; userId: string; idempotencyKey: string }) {
+  const ad = assertAdvertisementReadyForFacebook(await getAdvertisementForPagePublication(params.advertisementId));
 
   if (!env.META_PAGE_ID) {
     throw new Error("META_PAGE_ID manquant");
   }
 
-  const rawPhotoUrls = ad.selectedPhotos.length > 0
-    ? ad.selectedPhotos.map((item) => item.propertyPhoto.url)
-    : ad.property.photos.map((photo) => photo.url);
-  const selectedPhotoUrls = dedupePhotoUrls(rawPhotoUrls);
-
-  if (!ad.title.trim()) {
-    throw new Error("Titre vide");
-  }
-
-  if (!ad.property.monthlyPrice) {
-    throw new Error("Prix manquant");
-  }
-
-  const publicationPayload = buildPublicationMessage({
+  const selectedPhotoUrls = getSelectedPhotoUrls(ad);
+  const prepared = buildManualFacebookText({
     title: ad.title,
     property: {
-      id: ad.property.id,
-      rentalUnitId: ad.property.rentalUnitId,
-      monthlyPrice: ad.property.monthlyPrice,
-      bedrooms: ad.property.bedrooms,
-      city: ad.property.city,
-      district: ad.property.district,
-      propertyType: ad.property.propertyType,
-      petsAllowed: ad.property.petsAllowed,
-      parking: ad.property.parking,
-      inclusions: ad.property.inclusions,
+      id: ad.property!.id,
+      rentalUnitId: ad.property!.rentalUnitId,
+      monthlyPrice: ad.property!.monthlyPrice,
+      bedrooms: ad.property!.bedrooms,
+      city: ad.property!.city,
+      district: ad.property!.district,
+      propertyType: ad.property!.propertyType,
+      petsAllowed: ad.property!.petsAllowed,
+      parking: ad.property!.parking,
+      inclusions: ad.property!.inclusions,
+      availableFrom: ad.property!.availableFrom,
+      address: ad.property!.address,
     },
   });
 
-  const fingerprint = buildFingerprint(ad.title, publicationPayload.message, selectedPhotoUrls);
+  const fingerprint = buildFingerprint(ad.title, prepared.message, selectedPhotoUrls);
   const duplicate = await prisma.advertisementPublication.findFirst({
     where: {
       channel: "PAGE",
@@ -721,12 +916,7 @@ export async function publishAdvertisementToMetaPage(params: {
     throw new Error("Cette tentative a deja echoue. Relancez avec une nouvelle cle d'idempotence.");
   }
 
-  const tokenResult = await resolveMetaTokens(params.userId);
-  const token = tokenResult.pageToken;
-
-  if (!token) {
-    throw new Error("Connexion a la Page Facebook non configuree");
-  }
+  const token = await getMetaPageToken(params.userId);
 
   if (process.env.META_DRY_RUN === "true") {
     await prisma.advertisement.update({
@@ -739,6 +929,7 @@ export async function publishAdvertisementToMetaPage(params: {
         publishedAt: new Date(),
         publicationUrl: "https://example.com/meta/dry-run",
         externalPublicationId: "dry-run",
+        requiresManualAction: false,
         latestErrorMessage: null,
       },
     });
@@ -785,38 +976,29 @@ export async function publishAdvertisementToMetaPage(params: {
       externalId = await publishSinglePhoto({
         pageId: env.META_PAGE_ID,
         pageToken: token,
-        message: publicationPayload.message,
+        message: prepared.message,
         photoUrl: selectedPhotoUrls[0],
       });
     } else if (selectedPhotoUrls.length > 1) {
       const uploadedMediaIds: string[] = [];
       for (const photoUrl of selectedPhotoUrls) {
-        try {
-          const mediaId = await uploadUnpublishedPhoto({
-            pageId: env.META_PAGE_ID,
-            pageToken: token,
-            url: photoUrl,
-          });
-          uploadedMediaIds.push(mediaId);
-        } catch (photoError) {
-          warningMessage = "Meta a refuse une des photos.";
-          throw photoError;
-        }
+        const mediaId = await uploadUnpublishedPhoto({ pageId: env.META_PAGE_ID, pageToken: token, url: photoUrl });
+        uploadedMediaIds.push(mediaId);
       }
 
       externalId = await publishFeed({
         pageId: env.META_PAGE_ID,
         pageToken: token,
-        message: publicationPayload.message,
-        link: publicationPayload.listingUrl,
+        message: prepared.message,
+        link: prepared.listingUrl,
         attachedMedia: uploadedMediaIds,
       });
     } else {
       externalId = await publishFeed({
         pageId: env.META_PAGE_ID,
         pageToken: token,
-        message: publicationPayload.message,
-        link: publicationPayload.listingUrl,
+        message: prepared.message,
+        link: prepared.listingUrl,
       });
     }
   } catch (publishError) {
@@ -829,10 +1011,10 @@ export async function publishAdvertisementToMetaPage(params: {
       externalId = await publishFeed({
         pageId: env.META_PAGE_ID,
         pageToken: token,
-        message: publicationPayload.message,
-        link: publicationPayload.listingUrl,
+        message: prepared.message,
+        link: prepared.listingUrl,
       });
-      warningMessage = warningMessage || formatMetaError(parsedError);
+      warningMessage = formatMetaError(parsedError);
     } catch (fallbackError) {
       const fallbackParsed = parseMetaError({ error: fallbackError as MetaGraphError }) ||
         (typeof fallbackError === "object" && fallbackError !== null && "message" in fallbackError
@@ -860,7 +1042,8 @@ export async function publishAdvertisementToMetaPage(params: {
     throw new Error("Meta n'a retourne aucun identifiant de publication.");
   }
 
-  const publicationUrl = `https://www.facebook.com/${externalId}`;
+  const permalink = await resolvePermalinkUrl({ pageToken: token, publicationId: externalId });
+  const publicationUrl = permalink || `https://www.facebook.com/${externalId}`;
 
   return prisma.$transaction(async (tx) => {
     const updatedPublication = await tx.advertisementPublication.update({
@@ -882,6 +1065,7 @@ export async function publishAdvertisementToMetaPage(params: {
         publicationUrl,
         externalPublicationId: externalId,
         publishedByUserId: params.userId,
+        requiresManualAction: false,
         latestErrorMessage: warningMessage,
       },
     });

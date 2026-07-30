@@ -19,6 +19,7 @@ const envSchema = z.object({
   META_REDIRECT_URI: z.string().optional(),
   META_PAGE_ID: z.string().optional(),
   META_PAGE_ACCESS_TOKEN: z.string().optional(),
+  META_PAGE_URL: z.string().url().optional(),
   META_GRAPH_API_VERSION: z.preprocess(
     (value) => (typeof value === "string" && value.trim().length === 0 ? undefined : value),
     z.string().default("v20.0"),
@@ -54,6 +55,7 @@ export const env = parsed.success
       META_REDIRECT_URI: undefined,
       META_PAGE_ID: undefined,
       META_PAGE_ACCESS_TOKEN: undefined,
+      META_PAGE_URL: undefined,
       META_GRAPH_API_VERSION: "v20.0",
       META_VERIFY_TOKEN: undefined,
       META_TOKEN_ENCRYPTION_KEY: undefined,

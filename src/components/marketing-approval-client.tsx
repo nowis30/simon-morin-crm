@@ -82,6 +82,7 @@ type Advertisement = {
     status: string;
     publicationUrl: string | null;
     publishedAt: string | null;
+    checklist?: { manualPreparationOpenedAt?: string; manualConfirmedAt?: string } | null;
     errorMessage?: string | null;
   }>;
   groupPublications: Array<{
@@ -91,6 +92,14 @@ type Advertisement = {
     publicationUrl: string | null;
     group: { id: string; name: string; city: string | null };
   }>;
+};
+
+type ManualPreparedPayload = {
+  message: string;
+  listingUrl: string;
+  facebookOpenUrl: string;
+  photoUrls: string[];
+  primaryPhotoUrl: string | null;
 };
 
 const DEFAULT_PUBLIC_BASE_URL = "https://logements.nowis.store";
@@ -151,6 +160,22 @@ function statusBadgeClass(status: string) {
   return "bg-slate-100 text-slate-900";
 }
 
+function getPageWorkflowLabel(ad: Advertisement) {
+  const marketplacePublication = ad.publications.find((item) => item.channel === "MARKETPLACE" && item.status === "PUBLISHED");
+  if (marketplacePublication) {
+    return "Publiee manuellement sur Marketplace";
+  }
+
+  const pagePublication = ad.publications.find((item) => item.channel === "PAGE");
+  if (pagePublication?.status === "MANUAL_ACTION_REQUIRED" || ad.status === "MANUAL_ACTION_REQUIRED") {
+    return "Preparee pour Facebook";
+  }
+  if (pagePublication?.checklist?.manualConfirmedAt) {
+    return "Publiee manuellement";
+  }
+  return ad.status;
+}
+
 export function MarketingApprovalClient() {
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [metaStatus, setMetaStatus] = useState<MetaStatus | null>(null);
@@ -163,6 +188,7 @@ export function MarketingApprovalClient() {
   const [selectedAdId, setSelectedAdId] = useState<string | null>(null);
   const [groupSuggestion, setGroupSuggestion] = useState<GroupSuggestionPayload | null>(null);
   const [selectedPagePhotos, setSelectedPagePhotos] = useState<Record<string, string[]>>({});
+  const [manualPreparedByAd, setManualPreparedByAd] = useState<Record<string, ManualPreparedPayload>>({});
   const [groupForm, setGroupForm] = useState({ name: "", link: "", city: "", language: "", sectors: "" });
   const [approveAllSummary, setApproveAllSummary] = useState<{ channels: string[]; photoCount: number; incompleteFields: string[]; warnings: string[]; lastPropertyCheck: string | null } | null>(null);
 
@@ -331,7 +357,31 @@ export function MarketingApprovalClient() {
     await load();
   }
 
-  async function publishPage(adId: string) {
+  async function prepareFacebookManual(adId: string) {
+    const headers = await withCsrf();
+    const response = await fetch(`/api/marketing/publications/page/${adId}/prepare`, {
+      method: "POST",
+      headers,
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      setError(payload.error || "Preparation Facebook impossible.");
+      return;
+    }
+
+    const item = payload.item as ManualPreparedPayload;
+    setManualPreparedByAd((current) => ({ ...current, [adId]: item }));
+    window.open(item.facebookOpenUrl, "_blank", "noopener,noreferrer");
+    setMessage("Preparation terminee. Collez le texte, ajoutez les photos puis confirmez la publication manuelle.");
+    await load();
+  }
+
+  async function publishPageAutomatically(adId: string) {
+    const confirmed = window.confirm("Confirmer la publication automatique immediate sur la Page Facebook ?");
+    if (!confirmed) {
+      return;
+    }
+
     const idempotencyKey = `${adId}-${Date.now()}`;
     const headers = await withCsrf();
     const response = await fetch(`/api/marketing/publications/page/${adId}/publish`, {
@@ -345,30 +395,50 @@ export function MarketingApprovalClient() {
       return;
     }
 
-    setMessage("Publication Facebook Page reussie.");
+    setMessage("Publication Facebook automatique reussie.");
     await load();
   }
 
-  async function markMarketplacePublished(adId: string) {
-    const publicationUrl = window.prompt("Coller le lien de l'annonce Marketplace publiee:");
+  async function confirmManualFacebook(adId: string) {
+    const publicationUrl = window.prompt("Collez l'URL publique de la publication Facebook:");
     if (!publicationUrl) return;
 
     const headers = await withCsrf();
-    const response = await fetch(`/api/marketing/publications/marketplace/${adId}/publish`, {
+    const response = await fetch(`/api/marketing/publications/page/${adId}/confirm-manual`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ publicationUrl }),
+    });
+
+    const payload = await response.json();
+    if (!response.ok) {
+      setError(payload.error || "Confirmation manuelle impossible.");
+      return;
+    }
+
+    setMessage("Publication manuelle confirmee.");
+    await load();
+  }
+
+  async function prepareMarketplace(adId: string) {
+    window.open(`/marketing/marketplace/${adId}`, "_blank", "noopener,noreferrer");
+  }
+
+  async function confirmMarketplacePublished(adId: string) {
+    const publicationUrl = window.prompt("Lien Marketplace (optionnel):") || "";
+    const publishedAt = window.prompt("Date de publication (optionnelle, format ISO):") || "";
+    const notes = window.prompt("Notes (optionnelles):") || "";
+    const expiresAt = window.prompt("Date d'expiration prevue (optionnelle, format ISO):") || "";
+
+    const headers = await withCsrf();
+    const response = await fetch(`/api/marketing/marketplace/${adId}/manual-confirm`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...headers },
       body: JSON.stringify({
         publicationUrl,
-        checklist: {
-          prix: true,
-          adresse: true,
-          chambres: true,
-          disponibilite: true,
-          animaux: true,
-          stationnement: true,
-          photos: true,
-          coordonnees: true,
-        },
+        publishedAt: publishedAt || undefined,
+        notes,
+        expiresAt: expiresAt || undefined,
       }),
     });
 
@@ -378,7 +448,7 @@ export function MarketingApprovalClient() {
       return;
     }
 
-    setMessage("Publication Marketplace enregistree.");
+    setMessage("Publiee manuellement sur Marketplace.");
     await load();
   }
 
@@ -544,7 +614,7 @@ export function MarketingApprovalClient() {
                   <p className="text-xs font-semibold text-emerald-900">{ad.type} | {ad.language} | {ad.property?.codeIsr || "Sans ISR"}</p>
                   <h4 className="text-lg font-bold">{ad.title}</h4>
                 </div>
-                <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusBadgeClass(ad.status)}`}>{ad.status}</span>
+                <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusBadgeClass(ad.status)}`}>{getPageWorkflowLabel(ad)}</span>
               </div>
 
               <p className="mt-2 text-sm text-emerald-900">{ad.property?.address || "Aucune adresse"} | {ad.property?.monthlyPrice || 0}$</p>
@@ -576,6 +646,49 @@ export function MarketingApprovalClient() {
                       );
                     })}
                   </div>
+                  {(selectedPagePhotos[ad.id] ?? []).length > 0 ? (
+                    <div className="rounded-lg border border-emerald-100 p-2 text-xs">
+                      <p className="font-semibold">Photos selectionnees (ordre de publication)</p>
+                      <div className="mt-1 grid gap-1">
+                        {(selectedPagePhotos[ad.id] ?? []).map((photoId, index) => {
+                          const photo = ad.property?.photos.find((item) => item.id === photoId);
+                          if (!photo) return null;
+                          return (
+                            <div key={photoId} className="flex flex-wrap items-center justify-between gap-2 rounded border border-emerald-100 px-2 py-1">
+                              <span>#{index + 1} {index === 0 ? "(principale)" : ""}</span>
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  className="rounded border border-emerald-200 px-2 py-1"
+                                  onClick={() => window.open(photo.url, "_blank", "noopener,noreferrer")}
+                                >
+                                  Ouvrir
+                                </button>
+                                <button className="rounded border border-emerald-200 px-2 py-1" onClick={() => togglePagePhoto(ad.id, photoId)}>
+                                  Retirer
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+                  {(selectedPagePhotos[ad.id] ?? []).length > 0 ? (
+                    <button
+                      className="w-fit rounded-lg border border-emerald-300 px-3 py-2 text-sm"
+                      onClick={() => {
+                        const primaryPhotoId = (selectedPagePhotos[ad.id] ?? [])[0];
+                        const primaryPhoto = ad.property?.photos.find((item) => item.id === primaryPhotoId);
+                        if (!primaryPhoto) {
+                          setError("Photo principale introuvable.");
+                          return;
+                        }
+                        void copyToClipboard(primaryPhoto.url, "Lien de la photo principale copie.");
+                      }}
+                    >
+                      Copier le lien de la photo principale
+                    </button>
+                  ) : null}
                   <button className="w-fit rounded-lg border border-emerald-300 px-3 py-2 text-sm" onClick={() => savePagePhotos(ad)}>
                     Enregistrer photos Page
                   </button>
@@ -595,14 +708,20 @@ export function MarketingApprovalClient() {
               </div>
 
               <div className="mt-3 flex flex-wrap gap-2">
-                <button className="rounded-lg bg-[var(--accent)] px-3 py-2 text-sm text-white" onClick={() => publishPage(ad.id)} disabled={ad.status !== "APPROVED"}>
-                  Publier sur Page Facebook
+                <button className="rounded-lg bg-[var(--accent)] px-3 py-2 text-sm text-white" onClick={() => prepareFacebookManual(ad.id)} disabled={ad.status !== "APPROVED"}>
+                  Preparer et ouvrir dans Facebook (recommande)
                 </button>
-                <button className="rounded-lg border border-emerald-300 px-3 py-2 text-sm" onClick={() => publishPage(ad.id)}>
-                  Reessayer la publication
+                <button className="rounded-lg border border-emerald-300 px-3 py-2 text-sm" onClick={() => publishPageAutomatically(ad.id)} disabled={ad.status !== "APPROVED"}>
+                  Publier automatiquement
                 </button>
-                <button className="rounded-lg border border-emerald-300 px-3 py-2 text-sm" onClick={() => markMarketplacePublished(ad.id)} disabled={ad.status !== "APPROVED" && ad.status !== "MANUAL_ACTION_REQUIRED"}>
-                  Marquer Marketplace publie
+                <button className="rounded-lg border border-sky-300 px-3 py-2 text-sm" onClick={() => confirmManualFacebook(ad.id)}>
+                  J'ai publie cette annonce
+                </button>
+                <button className="rounded-lg bg-[var(--accent)] px-3 py-2 text-sm text-white" onClick={() => prepareMarketplace(ad.id)}>
+                  Preparer pour Marketplace
+                </button>
+                <button className="rounded-lg border border-emerald-300 px-3 py-2 text-sm" onClick={() => confirmMarketplacePublished(ad.id)}>
+                  J'ai publie sur Marketplace
                 </button>
                 <button className="rounded-lg border border-emerald-300 px-3 py-2 text-sm" onClick={() => loadGroupSuggestions(ad.id)}>
                   Preparer publication Groupes
@@ -610,7 +729,12 @@ export function MarketingApprovalClient() {
               </div>
 
               <div className="mt-3 flex flex-wrap gap-2">
-                <button className="rounded-lg border border-emerald-300 px-3 py-2 text-sm" onClick={() => copyToClipboard(buildManualPublicationText(ad), "Texte copie.")}>Copier le texte</button>
+                <button
+                  className="rounded-lg border border-emerald-300 px-3 py-2 text-sm"
+                  onClick={() => copyToClipboard(manualPreparedByAd[ad.id]?.message || buildManualPublicationText(ad), "Texte copie.")}
+                >
+                  Copier le texte
+                </button>
                 <button
                   className="rounded-lg border border-emerald-300 px-3 py-2 text-sm"
                   onClick={() => {
@@ -640,13 +764,29 @@ export function MarketingApprovalClient() {
                 <button
                   className="rounded-lg border border-emerald-300 px-3 py-2 text-sm"
                   onClick={() => {
-                    const pageUrl = metaStatus?.pageId ? `https://www.facebook.com/${metaStatus.pageId}` : "https://www.facebook.com/";
+                    const pageUrl = manualPreparedByAd[ad.id]?.facebookOpenUrl || (metaStatus?.pageId ? `https://www.facebook.com/${metaStatus.pageId}` : "https://www.facebook.com/");
                     window.open(pageUrl, "_blank", "noopener,noreferrer");
                   }}
                 >
                   Ouvrir ma Page Facebook
                 </button>
+                {ad.publications.find((item) => item.publicationUrl)?.publicationUrl ? (
+                  <button
+                    className="rounded-lg border border-emerald-300 px-3 py-2 text-sm"
+                    onClick={() => {
+                      const url = ad.publications.find((item) => item.publicationUrl)?.publicationUrl;
+                      if (!url) return;
+                      window.open(url, "_blank", "noopener,noreferrer");
+                    }}
+                  >
+                    Voir la publication Facebook
+                  </button>
+                ) : null}
               </div>
+
+              <p className="mt-2 text-xs text-emerald-800">
+                Mode recommande: ouvrez Facebook, collez le texte, ajoutez les photos selectionnees, publiez, puis cliquez sur "J'ai publie cette annonce" pour enregistrer le lien.
+              </p>
 
               {ad.publications.length > 0 ? (
                 <details className="mt-3">

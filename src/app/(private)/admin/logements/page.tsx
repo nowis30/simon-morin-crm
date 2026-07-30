@@ -198,6 +198,9 @@ export default function AdminLogementsPage() {
               <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${item.address}, ${item.city}`)}`} target="_blank" rel="noreferrer" className="rounded-lg border border-emerald-200 px-3 py-2 text-sm">Ouvrir dans Google Maps</a>
               <button type="button" onClick={() => generateAds(item.id)} className="rounded-lg border border-emerald-200 px-3 py-2 text-sm">Generer annonces</button>
               <a className="rounded-lg border border-emerald-200 px-3 py-2 text-sm" href={`/visits?propertyId=${item.id}`}>Planifier une visite</a>
+              <a className="rounded-lg bg-[var(--accent)] px-3 py-2 text-sm text-white" href={`/marketing?propertyId=${item.id}`}>
+                Preparer pour Marketplace
+              </a>
               {item.gestionIsrUrl ? (<a href={item.gestionIsrUrl} target="_blank" rel="noreferrer" className="rounded-lg border border-emerald-200 px-3 py-2 text-sm">Ouvrir la fiche ISR</a>) : null}
               <CopyButton text={item.descriptionFr} label="Copier description FR" />
             </div>

@@ -209,6 +209,10 @@ export const publishPageSchema = z.object({
   idempotencyKey: z.string().min(8).max(160),
 });
 
+export const confirmManualFacebookPublicationSchema = z.object({
+  publicationUrl: z.string().trim().url().max(300),
+});
+
 export const marketplacePublishSchema = z.object({
   publicationUrl: z.string().url(),
   checklist: z.object({
@@ -221,6 +225,18 @@ export const marketplacePublishSchema = z.object({
     photos: z.boolean(),
     coordonnees: z.boolean(),
   }),
+});
+
+export const marketplacePackageSchema = z.object({
+  orderedPhotoIds: z.array(z.string().min(1)).min(1).max(20),
+  finalText: z.string().min(1).max(12_000),
+});
+
+export const marketplaceManualConfirmSchema = z.object({
+  publicationUrl: z.string().trim().url().optional().or(z.literal("")),
+  publishedAt: z.string().datetime().optional(),
+  notes: z.string().max(1000).optional(),
+  expiresAt: z.string().datetime().optional(),
 });
 
 export const facebookGroupSchema = z.object({

@@ -1,7 +1,7 @@
 import { randomBytes } from "crypto";
 import { AdvertisementStatus, PublicationChannel } from "@prisma/client";
 import { env, getMetaConfigIssues, isMetaConfigured } from "@/lib/env";
-import { getPublicListingPath, getPublicListingUrl } from "@/lib/public-url";
+import { getPublicAppUrl, getPublicListingPath, getPublicListingUrl } from "@/lib/public-url";
 import { getPublicFeatures } from "@/lib/public-listings";
 import { prisma } from "@/lib/prisma";
 import { decryptMetaToken, encryptMetaToken } from "@/lib/meta-token-crypto";
@@ -633,7 +633,9 @@ export async function getMetaDiagnostic(userId: string): Promise<MetaDiagnosticR
     issues.push("META_REDIRECT_URI doit pointer vers /api/integrations/meta/facebook/callback.");
   }
 
-  if (env.META_REDIRECT_URI && env.NEXT_PUBLIC_APP_URL && !env.META_REDIRECT_URI.startsWith(env.NEXT_PUBLIC_APP_URL)) {
+  const publicAppUrl = getPublicAppUrl();
+
+  if (env.META_REDIRECT_URI && publicAppUrl && !env.META_REDIRECT_URI.startsWith(publicAppUrl)) {
     issues.push("META_REDIRECT_URI ne correspond pas au domaine public configure.");
   }
 

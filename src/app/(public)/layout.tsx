@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { env } from "@/lib/env";
+
+const OFFICIAL_PUBLIC_EMAIL = "simonmorin@nowis.store";
+const OFFICIAL_PUBLIC_PHONE_DISPLAY = "819-388-3407";
+const OFFICIAL_PUBLIC_PHONE_TECHNICAL = "+18193883407";
 
 export const metadata: Metadata = {
   title: {
@@ -21,9 +26,21 @@ export const metadata: Metadata = {
     images: [
       {
         url: "/annonce.png",
-        width: 1200,
-        height: 630,
-        alt: "Logements a louer a Drummondville",
+        width: 864,
+        height: 1821,
+        alt: "Logements a louer a Drummondville avec Simon Morin",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Logements a louer a Drummondville | Simon Morin",
+    description:
+      "Decouvrez les logements disponibles a Drummondville et dans les environs. Consultez les photos, les caracteristiques et envoyez votre demande de visite.",
+    images: [
+      {
+        url: "/annonce.png",
+        alt: "Logements a louer a Drummondville avec Simon Morin",
       },
     ],
   },
@@ -36,15 +53,23 @@ const publicLinks = [
 ];
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
-  const publicPhone = env.PUBLIC_CONTACT_PHONE?.trim();
-  const publicEmail = env.PUBLIC_CONTACT_EMAIL?.trim();
+  const publicPhone = env.PUBLIC_CONTACT_PHONE?.trim() || OFFICIAL_PUBLIC_PHONE_DISPLAY;
+  const publicEmail = env.PUBLIC_CONTACT_EMAIL?.trim() || OFFICIAL_PUBLIC_EMAIL;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 via-white to-emerald-50 text-slate-900">
       <header className="sticky top-0 z-40 border-b border-amber-200/60 bg-white/90 backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-4 md:px-6">
-          <Link href="/" className="text-lg font-bold tracking-tight text-slate-900">
-            Simon Morin - Agent de location
+          <Link href="/" className="flex items-center gap-3 text-slate-900">
+            <Image
+              src="/logo.png"
+              alt="Simon Morin - Agent de location"
+              width={742}
+              height={503}
+              className="h-12 w-auto object-contain"
+              priority
+            />
+            <span className="hidden text-base font-bold tracking-tight sm:inline">Simon Morin - Agent de location</span>
           </Link>
 
           <nav className="hidden items-center gap-2 md:flex">
@@ -81,10 +106,11 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       <footer className="mt-14 border-t border-amber-200 bg-slate-950 text-slate-200">
         <div className="mx-auto grid w-full max-w-6xl gap-6 px-4 py-10 md:grid-cols-2 md:px-6">
           <div className="space-y-2">
-            <h2 className="text-lg font-bold text-white">Simon Morin - Agent de location</h2>
-            <p className="text-sm text-slate-300">Drummondville et environs</p>
-            {publicEmail ? <p className="text-sm text-slate-300">Courriel: {publicEmail}</p> : null}
-            {publicPhone ? <p className="text-sm text-slate-300">Telephone: {publicPhone}</p> : null}
+            <h2 className="text-lg font-bold text-white">Simon Morin</h2>
+            <p className="text-sm text-slate-300">Agent de location</p>
+            <p className="text-sm text-slate-300">Drummondville et les environs</p>
+            <p className="text-sm text-slate-300">Telephone: <a href={`tel:${OFFICIAL_PUBLIC_PHONE_TECHNICAL}`} className="underline decoration-dotted underline-offset-2 hover:text-white">{publicPhone}</a></p>
+            <p className="text-sm text-slate-300">Courriel: <a href={`mailto:${publicEmail}`} className="underline decoration-dotted underline-offset-2 hover:text-white">{publicEmail}</a></p>
           </div>
           <div className="space-y-3 md:text-right">
             <Link href="/privacy" className="block text-sm text-slate-300 hover:text-white">

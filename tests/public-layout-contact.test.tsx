@@ -23,5 +23,6 @@ describe("public layout and contact routing", () => {
     const html = renderToStaticMarkup(module.default({ children: <div>content</div> }));
     expect(html).toContain("href=\"/contact\"");
     expect(html).not.toContain("/#contact");
+    expect(html).toContain("Simon Morin - Agent de location");
   });
 });

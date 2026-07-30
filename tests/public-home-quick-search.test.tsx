@@ -19,5 +19,7 @@ describe("home quick search", () => {
     expect(html).toContain("name=\"city\"");
     expect(html).toContain("name=\"bedrooms\"");
     expect(html).toContain("name=\"maxPrice\"");
+    expect(html).toContain("href=\"tel:+18193883407\"");
+    expect(html).toContain("href=\"mailto:simonmorin@nowis.store\"");
   });
 });

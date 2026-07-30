@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
+
+const OFFICIAL_PUBLIC_EMAIL = "simonmorin@nowis.store";
+const OFFICIAL_PUBLIC_PHONE_DISPLAY = "819-388-3407";
+const OFFICIAL_PUBLIC_PHONE_TECHNICAL = "+18193883407";
 
 async function getCatalogItems() {
   const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/public/catalog`, {
@@ -62,6 +67,21 @@ export default async function HomePage() {
               Consultez les logements disponibles, decouvrez les photos et les caracteristiques, puis envoyez directement votre demande de visite.
             </p>
 
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 text-slate-900">
+              <p className="text-base font-bold">Une question concernant un logement?</p>
+              <p className="mt-1 text-sm text-slate-700">
+                Communiquez directement avec Simon Morin au 819-388-3407 ou a simonmorin@nowis.store.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-3">
+                <a href={`tel:${OFFICIAL_PUBLIC_PHONE_TECHNICAL}`} className="w-full rounded-full bg-slate-900 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-slate-800 sm:w-auto">
+                  {OFFICIAL_PUBLIC_PHONE_DISPLAY}
+                </a>
+                <a href={`mailto:${OFFICIAL_PUBLIC_EMAIL}`} className="w-full rounded-full border border-slate-400 px-4 py-3 text-center text-sm font-semibold text-slate-900 hover:bg-white sm:w-auto">
+                  Envoyer un courriel
+                </a>
+              </div>
+            </div>
+
             <form action="/logements" method="get" className="grid gap-3 rounded-2xl border border-amber-200 bg-white/80 p-4 sm:grid-cols-3">
               <input name="city" placeholder="Ville ou secteur" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
               <input name="bedrooms" type="number" min={0} placeholder="Chambres" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
@@ -82,6 +102,16 @@ export default async function HomePage() {
           </div>
 
           <div className="rounded-3xl border border-white/70 bg-white/80 p-5 shadow-xl">
+            <div className="relative mb-4 h-64 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <Image
+                src="/annonce.png"
+                alt="Logements a louer a Drummondville avec Simon Morin"
+                fill
+                className="object-contain"
+                sizes="(max-width: 768px) 100vw, 40vw"
+                priority
+              />
+            </div>
             <h2 className="text-lg font-bold text-slate-900">Comment demander une visite</h2>
             <ol className="mt-4 grid gap-3 text-sm text-slate-700">
               <li>1. Ouvrez un logement disponible.</li>

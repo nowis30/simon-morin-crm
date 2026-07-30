@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 
 describe("public contact page", () => {
-  it("renders phone and email links when configured", async () => {
+  it("always uses official public call and email links", async () => {
     vi.resetModules();
     vi.doMock("@/lib/env", () => ({
       env: {
@@ -17,12 +17,12 @@ describe("public contact page", () => {
     const pageModule = await import("@/app/(public)/contact/page");
     const html = renderToStaticMarkup(pageModule.default());
 
-    expect(html).toContain("href=\"tel:8195552323\"");
-    expect(html).toContain("href=\"mailto:public@example.com\"");
+    expect(html).toContain("href=\"tel:+18193883407\"");
+    expect(html).toContain("href=\"mailto:simonmorin@nowis.store\"");
     expect(html).toContain("href=\"https://m.me/public\"");
   });
 
-  it("hides direct action buttons when values are not configured", async () => {
+  it("keeps official links and hides messenger action when missing", async () => {
     vi.resetModules();
     vi.doMock("@/lib/env", () => ({
       env: {
@@ -35,8 +35,8 @@ describe("public contact page", () => {
     const pageModule = await import("@/app/(public)/contact/page");
     const html = renderToStaticMarkup(pageModule.default());
 
-    expect(html).not.toContain("href=\"tel:");
-    expect(html).not.toContain("href=\"mailto:");
+    expect(html).toContain("href=\"tel:+18193883407\"");
+    expect(html).toContain("href=\"mailto:simonmorin@nowis.store\"");
     expect(html).not.toContain("Ouvrir Messenger");
     expect(html).not.toContain("m.me/");
   });

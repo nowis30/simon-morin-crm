@@ -3,6 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { env } from "@/lib/env";
 import { getPublicAppUrl } from "@/lib/public-url";
+import { PublicBottomNav } from "@/components/public/public-bottom-nav";
+import { PublicMobileMenu } from "@/components/public/public-mobile-menu";
 
 const OFFICIAL_PUBLIC_EMAIL = "simonmorin@nowis.store";
 const OFFICIAL_PUBLIC_PHONE_DISPLAY = "819-388-3407";
@@ -49,7 +51,7 @@ export const metadata: Metadata = {
 
 const publicLinks = [
   { href: "/", label: "Accueil" },
-  { href: "/logements", label: "Logements disponibles" },
+  { href: "/logements", label: "Logements" },
   { href: "/contact", label: "Contact" },
 ];
 
@@ -58,19 +60,19 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
   const publicEmail = env.PUBLIC_CONTACT_EMAIL?.trim() || OFFICIAL_PUBLIC_EMAIL;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50 via-white to-emerald-50 text-slate-900">
+    <div className="min-h-screen bg-gradient-to-b from-amber-50 via-slate-50 to-emerald-50 text-slate-900">
       <header className="sticky top-0 z-40 border-b border-amber-200/60 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-4 md:px-6">
-          <Link href="/" className="flex items-center gap-3 text-slate-900">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-3 md:px-6 md:py-4">
+          <Link href="/" className="flex items-center gap-2 text-slate-900" aria-label="Accueil Simon Morin">
             <Image
               src="/logo.png"
               alt="Simon Morin - Agent de location"
               width={742}
               height={503}
-              className="h-12 w-auto object-contain"
+              className="h-10 w-auto object-contain md:h-12"
               priority
             />
-            <span className="hidden text-base font-bold tracking-tight sm:inline">Simon Morin - Agent de location</span>
+            <span className="text-sm font-bold tracking-tight sm:text-base">Simon Morin</span>
           </Link>
 
           <nav className="hidden items-center gap-2 md:flex">
@@ -84,45 +86,42 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             </Link>
           </nav>
 
-          <details className="relative md:hidden">
-            <summary className="cursor-pointer list-none rounded-lg border border-amber-200 px-3 py-2 text-sm font-semibold text-slate-800">
-              Menu
-            </summary>
-            <div className="absolute right-0 mt-2 grid min-w-64 gap-2 rounded-xl border border-amber-200 bg-white p-3 shadow-lg">
-              {publicLinks.map((link) => (
-                <Link key={link.href} href={link.href} className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-amber-100">
-                  {link.label}
-                </Link>
-              ))}
-              <Link href="/logements" className="rounded-lg bg-emerald-600 px-3 py-2 text-center text-sm font-semibold text-white">
-                Trouver un logement
-              </Link>
-            </div>
-          </details>
+          <PublicMobileMenu
+            phoneTechnical={OFFICIAL_PUBLIC_PHONE_TECHNICAL}
+            links={[
+              ...publicLinks,
+              { href: `tel:${OFFICIAL_PUBLIC_PHONE_TECHNICAL}`, label: "Appeler Simon" },
+            ]}
+          />
         </div>
       </header>
 
-      <main>{children}</main>
+      <main className="pb-[calc(env(safe-area-inset-bottom)+5.25rem)] md:pb-0">{children}</main>
 
-      <footer className="mt-14 border-t border-amber-200 bg-slate-950 text-slate-200">
-        <div className="mx-auto grid w-full max-w-6xl gap-6 px-4 py-10 md:grid-cols-2 md:px-6">
+      <footer className="mt-10 border-t border-slate-200 bg-white/95">
+        <div className="mx-auto grid w-full max-w-6xl gap-6 px-4 py-6 md:grid-cols-2 md:px-6 md:py-8">
           <div className="space-y-2">
-            <h2 className="text-lg font-bold text-white">Simon Morin</h2>
-            <p className="text-sm text-slate-300">Agent de location</p>
-            <p className="text-sm text-slate-300">Drummondville et les environs</p>
-            <p className="text-sm text-slate-300">Telephone: <a href={`tel:${OFFICIAL_PUBLIC_PHONE_TECHNICAL}`} className="underline decoration-dotted underline-offset-2 hover:text-white">{publicPhone}</a></p>
-            <p className="text-sm text-slate-300">Courriel: <a href={`mailto:${publicEmail}`} className="underline decoration-dotted underline-offset-2 hover:text-white">{publicEmail}</a></p>
+            <h2 className="text-base font-bold text-slate-900">Simon Morin</h2>
+            <p className="text-sm text-slate-700">Agent de location</p>
+            <p className="text-sm text-slate-700">Drummondville et les environs</p>
+            <p className="text-sm text-slate-700">Telephone: <a href={`tel:${OFFICIAL_PUBLIC_PHONE_TECHNICAL}`} className="underline decoration-dotted underline-offset-2 hover:text-slate-900">{publicPhone}</a></p>
+            <p className="text-sm text-slate-700">Courriel: <a href={`mailto:${publicEmail}`} className="underline decoration-dotted underline-offset-2 hover:text-slate-900">{publicEmail}</a></p>
+            <Link href="/logements" className="inline-flex min-h-11 items-center rounded-full bg-emerald-600 px-5 text-sm font-semibold text-white hover:bg-emerald-500">
+              Voir les logements
+            </Link>
           </div>
-          <div className="space-y-3 md:text-right">
-            <Link href="/privacy" className="block text-sm text-slate-300 hover:text-white">
+          <div className="space-y-2 md:text-right">
+            <Link href="/privacy" className="block text-sm text-slate-700 hover:text-slate-900">
               Politique de confidentialite
             </Link>
-            <Link href="/login" className="inline-block text-xs text-slate-400 hover:text-slate-200">
+            <Link href="/login" className="inline-block text-xs text-slate-500 hover:text-slate-700">
               Connexion administrateur
             </Link>
           </div>
         </div>
       </footer>
+
+      <PublicBottomNav />
     </div>
   );
 }

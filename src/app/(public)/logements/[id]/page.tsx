@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { ListingPhotoGallery } from "@/components/public/listing-photo-gallery";
 import { VisitRequestForm } from "@/components/public/visit-request-form";
+import { MobileVisitCta } from "@/components/public/mobile-visit-cta";
 import { dedupeListingPhotos, formatPublicAddress, getPublicFeatures, isPropertyPubliclyAvailable, isRentalUnitPubliclyAvailable, type ListingPhoto } from "@/lib/public-listings";
 import { getPublicListingUrl } from "@/lib/public-url";
 
@@ -101,64 +102,95 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
       buildingPhotos,
     };
 
-    return (
-      <main className="min-h-screen bg-slate-950 px-6 py-16 text-slate-100">
-        <div className="mx-auto flex max-w-6xl flex-col gap-8">
-          <Link href="/logements" className="text-sm text-emerald-400">← Retour aux logements</Link>
-          <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-            <section className="space-y-6">
-              <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70">
-                {item.photoCount > 0 ? (
-                  <ListingPhotoGallery title={item.address} unitPhotos={item.unitPhotos} buildingPhotos={item.buildingPhotos} />
-                ) : (
-                  <div className="flex h-80 items-center justify-center text-sm text-slate-400">Aucune photo disponible pour ce logement.</div>
-                )}
-              </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
-                <h1 className="text-3xl font-semibold">{item.address}</h1>
-                <p className="mt-2 text-slate-400">{item.city}{item.district ? ` · ${item.district}` : ""}</p>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div><p className="text-sm text-slate-400">Prix</p><p className="text-xl font-semibold">{item.monthlyPrice.toLocaleString("fr-CA")} $ / mois</p></div>
-                  <div><p className="text-sm text-slate-400">Type</p><p className="text-xl font-semibold">{item.propertyType} · {item.bedrooms} chambre{item.bedrooms > 1 ? "s" : ""}</p></div>
-                  <div><p className="text-sm text-slate-400">Disponibilite</p><p className="text-xl font-semibold">{item.availabilityLabel}</p></div>
-                </div>
-                <div className="mt-6 text-sm text-slate-300">
-                  <p className="font-medium text-white">Caractéristiques</p>
-                  <ul className="mt-2 space-y-2">
-                    {item.features.map((feature: string) => <li key={feature}>• {feature}</li>)}
-                  </ul>
-                </div>
-                <p className="mt-6 text-slate-300">{item.description}</p>
-              </div>
-            </section>
+    const priceLabel = `${item.monthlyPrice.toLocaleString("fr-CA")} $ / mois`;
+    const canRequestVisit = !item.isUnavailable && Boolean(item.linkedPropertyId);
 
-            <aside className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
-              <h2 className="text-xl font-semibold">Demander une visite</h2>
-              <p className="mt-2 text-sm text-slate-400">Votre demande sera transmise à Simon pour confirmation manuelle.</p>
-              <a
-                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getPublicListingUrl(item.id))}`}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-4 inline-flex rounded-full border border-emerald-400 px-4 py-2 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/10"
-              >
-                Partager ce logement
-              </a>
-              {item.isUnavailable ? (
-                <div className="mt-6 space-y-4 rounded-xl border border-slate-700 bg-slate-950/70 p-4 text-sm text-slate-300">
-                  <p>Ce logement n’est plus disponible — voir les logements semblables.</p>
-                  <Link href="/logements" className="inline-flex rounded-full bg-emerald-500 px-4 py-2 font-medium text-slate-950">Voir les logements</Link>
+    return (
+      <>
+        <main className="min-h-screen bg-transparent px-4 py-5 pb-44 text-slate-900 md:px-6 md:py-10 md:pb-10">
+          <div className="mx-auto flex max-w-6xl flex-col gap-5">
+            <Link href="/logements" className="inline-flex min-h-11 items-center text-sm font-semibold text-emerald-700">← Retour aux logements</Link>
+            <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+              <section className="space-y-4">
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                  {item.photoCount > 0 ? (
+                    <ListingPhotoGallery title={item.address} unitPhotos={item.unitPhotos} buildingPhotos={item.buildingPhotos} />
+                  ) : (
+                    <div className="flex h-80 items-center justify-center text-sm text-slate-500">Aucune photo disponible pour ce logement.</div>
+                  )}
                 </div>
-              ) : item.linkedPropertyId ? (
-                <VisitRequestForm propertyId={item.linkedPropertyId} rentalUnitId={item.id} />
-              ) : (
-                <div className="mt-6 rounded-xl border border-slate-700 bg-slate-950/70 p-4 text-sm text-slate-300">
-                  La demande de visite est temporairement désactivée pour cette unité en attente de validation.
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6">
+                  <p className="text-3xl font-black text-slate-900">{priceLabel}</p>
+                  <h1 className="mt-2 text-2xl font-bold text-slate-900 md:text-3xl">{item.address}</h1>
+                  <p className="mt-1 text-sm text-slate-700">{item.city}{item.district ? ` · ${item.district}` : ""}</p>
+
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                      <p className="text-xs text-slate-500">Type</p>
+                      <p className="text-base font-semibold text-slate-900">{item.propertyType}</p>
+                    </div>
+                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                      <p className="text-xs text-slate-500">Chambres</p>
+                      <p className="text-base font-semibold text-slate-900">{item.bedrooms} chambre{item.bedrooms > 1 ? "s" : ""}</p>
+                    </div>
+                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 sm:col-span-2">
+                      <p className="text-xs text-slate-500">Disponibilite</p>
+                      <p className="text-base font-semibold text-slate-900">{item.availabilityLabel}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 text-sm text-slate-700">
+                    <p className="font-semibold text-slate-900">Caracteristiques essentielles</p>
+                    <ul className="mt-2 space-y-2">
+                      {item.features.map((feature: string) => <li key={feature}>• {feature}</li>)}
+                    </ul>
+                  </div>
+
+                  <p className="mt-5 text-sm leading-6 text-slate-700">{item.description}</p>
                 </div>
-              )}
-            </aside>
+              </section>
+
+              <aside className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6">
+                <h2 className="text-xl font-semibold text-slate-900">Demander une visite</h2>
+                <p className="mt-2 text-sm text-slate-600">Votre demande sera transmise a Simon pour confirmation manuelle.</p>
+
+                {!item.isUnavailable ? (
+                  <a href="#visit-request-form" className="mt-4 inline-flex min-h-[52px] w-full items-center justify-center rounded-full bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-500">
+                    Demander une visite
+                  </a>
+                ) : null}
+
+                <div id="visit-request-form" className="scroll-mt-24">
+                  {item.isUnavailable ? (
+                    <div className="mt-6 space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                      <p>Ce logement n’est plus disponible — voir les logements semblables.</p>
+                      <Link href="/logements" className="inline-flex min-h-11 items-center rounded-full bg-emerald-600 px-4 font-medium text-white">Voir les logements</Link>
+                    </div>
+                  ) : item.linkedPropertyId ? (
+                    <VisitRequestForm propertyId={item.linkedPropertyId} rentalUnitId={item.id} />
+                  ) : (
+                    <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                      La demande de visite est temporairement desactivee pour cette unite en attente de validation.
+                    </div>
+                  )}
+                </div>
+
+                <a
+                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getPublicListingUrl(item.id))}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-full border border-emerald-200 px-4 text-sm font-semibold text-emerald-700 hover:bg-emerald-50"
+                >
+                  Partager ce logement
+                </a>
+              </aside>
+            </div>
           </div>
-        </div>
-      </main>
+        </main>
+
+        {canRequestVisit ? <MobileVisitCta priceLabel={priceLabel} targetId="visit-request-form" /> : null}
+      </>
     );
   }
 
@@ -199,52 +231,63 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
     unitPhotos: property.photos.map((photo) => ({ url: photo.url, description: photo.description, category: "UNKNOWN" as const })),
   };
 
-  return (
-    <main className="min-h-screen bg-slate-950 px-6 py-16 text-slate-100">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8">
-        <Link href="/logements" className="text-sm text-emerald-400">← Retour aux logements</Link>
-        <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-          <section className="space-y-6">
-            <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70">
-              {fallbackItem.photoCount > 0 ? (
-                <ListingPhotoGallery title={fallbackItem.address} unitPhotos={fallbackItem.unitPhotos} />
-              ) : (
-                <div className="flex h-80 items-center justify-center text-sm text-slate-400">Aucune photo disponible pour ce logement.</div>
-              )}
-            </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
-              <h1 className="text-3xl font-semibold">{fallbackItem.address}</h1>
-              <p className="mt-2 text-slate-400">{fallbackItem.city}{fallbackItem.district ? ` · ${fallbackItem.district}` : ""}</p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div><p className="text-sm text-slate-400">Prix</p><p className="text-xl font-semibold">{fallbackItem.monthlyPrice.toLocaleString("fr-CA")} $ / mois</p></div>
-                <div><p className="text-sm text-slate-400">Type</p><p className="text-xl font-semibold">{fallbackItem.propertyType} · {fallbackItem.bedrooms} chambre{fallbackItem.bedrooms > 1 ? "s" : ""}</p></div>
-                <div><p className="text-sm text-slate-400">Disponibilite</p><p className="text-xl font-semibold">{fallbackItem.availabilityLabel}</p></div>
-              </div>
-              <div className="mt-6 text-sm text-slate-300">
-                <p className="font-medium text-white">Caractéristiques</p>
-                <ul className="mt-2 space-y-2">
-                  {fallbackItem.features.map((feature: string) => <li key={feature}>• {feature}</li>)}
-                </ul>
-              </div>
-              <p className="mt-6 text-slate-300">{fallbackItem.description}</p>
-            </div>
-          </section>
+  const fallbackPriceLabel = `${fallbackItem.monthlyPrice.toLocaleString("fr-CA")} $ / mois`;
 
-          <aside className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
-            <h2 className="text-xl font-semibold">Demander une visite</h2>
-            <p className="mt-2 text-sm text-slate-400">Votre demande sera transmise à Simon pour confirmation manuelle.</p>
-            <a
-              href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getPublicListingUrl(fallbackItem.id))}`}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-4 inline-flex rounded-full border border-emerald-400 px-4 py-2 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/10"
-            >
-              Partager ce logement
-            </a>
-            <VisitRequestForm propertyId={fallbackItem.id} />
-          </aside>
+  return (
+    <>
+      <main className="min-h-screen bg-transparent px-4 py-5 pb-44 text-slate-900 md:px-6 md:py-10 md:pb-10">
+        <div className="mx-auto flex max-w-6xl flex-col gap-5">
+          <Link href="/logements" className="inline-flex min-h-11 items-center text-sm font-semibold text-emerald-700">← Retour aux logements</Link>
+          <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+            <section className="space-y-4">
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                {fallbackItem.photoCount > 0 ? (
+                  <ListingPhotoGallery title={fallbackItem.address} unitPhotos={fallbackItem.unitPhotos} />
+                ) : (
+                  <div className="flex h-80 items-center justify-center text-sm text-slate-500">Aucune photo disponible pour ce logement.</div>
+                )}
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6">
+                <p className="text-3xl font-black text-slate-900">{fallbackPriceLabel}</p>
+                <h1 className="mt-2 text-2xl font-bold text-slate-900 md:text-3xl">{fallbackItem.address}</h1>
+                <p className="mt-1 text-sm text-slate-700">{fallbackItem.city}{fallbackItem.district ? ` · ${fallbackItem.district}` : ""}</p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl border border-slate-100 bg-slate-50 p-3"><p className="text-xs text-slate-500">Type</p><p className="text-base font-semibold text-slate-900">{fallbackItem.propertyType}</p></div>
+                  <div className="rounded-xl border border-slate-100 bg-slate-50 p-3"><p className="text-xs text-slate-500">Chambres</p><p className="text-base font-semibold text-slate-900">{fallbackItem.bedrooms} chambre{fallbackItem.bedrooms > 1 ? "s" : ""}</p></div>
+                </div>
+                <div className="mt-5 text-sm text-slate-700">
+                  <p className="font-semibold text-slate-900">Caracteristiques essentielles</p>
+                  <ul className="mt-2 space-y-2">
+                    {fallbackItem.features.map((feature: string) => <li key={feature}>• {feature}</li>)}
+                  </ul>
+                </div>
+                <p className="mt-5 text-sm leading-6 text-slate-700">{fallbackItem.description}</p>
+              </div>
+            </section>
+
+            <aside className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6">
+              <h2 className="text-xl font-semibold text-slate-900">Demander une visite</h2>
+              <p className="mt-2 text-sm text-slate-600">Votre demande sera transmise a Simon pour confirmation manuelle.</p>
+              <a href="#visit-request-form" className="mt-4 inline-flex min-h-[52px] w-full items-center justify-center rounded-full bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-500">
+                Demander une visite
+              </a>
+              <div id="visit-request-form" className="scroll-mt-24">
+                <VisitRequestForm propertyId={fallbackItem.id} />
+              </div>
+              <a
+                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getPublicListingUrl(fallbackItem.id))}`}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-full border border-emerald-200 px-4 text-sm font-semibold text-emerald-700 hover:bg-emerald-50"
+              >
+                Partager ce logement
+              </a>
+            </aside>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+
+      <MobileVisitCta priceLabel={fallbackPriceLabel} targetId="visit-request-form" />
+    </>
   );
 }

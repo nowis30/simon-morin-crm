@@ -18,4 +18,18 @@ describe("listing search UI", () => {
     fireEvent.click(screen.getByText("Reinitialiser les filtres"));
     expect(pushMock).toHaveBeenCalledWith("/logements");
   });
+
+  it("toggles advanced filters with mobile-first labels", () => {
+    render(<ListingSearch total={12} />);
+
+    const toggle = screen.getByRole("button", { name: "Plus de filtres" });
+    const cityInput = screen.getByLabelText("Ville");
+    const filtersContainer = cityInput.closest("div");
+    expect(filtersContainer?.className).toContain("hidden");
+
+    fireEvent.click(toggle);
+    expect(screen.getByRole("button", { name: "Masquer les filtres" })).toBeTruthy();
+    expect(screen.getByLabelText("Ville").closest("div")?.className).not.toContain("hidden");
+    expect(screen.getByText("12 logements trouves")).toBeTruthy();
+  });
 });

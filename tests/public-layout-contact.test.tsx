@@ -4,6 +4,10 @@ import { describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { existsSync } from "node:fs";
 
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/",
+}));
+
 vi.mock("@/lib/env", () => ({
   env: {
     PUBLIC_CONTACT_PHONE: "819 555-1212",
@@ -23,6 +27,8 @@ describe("public layout and contact routing", () => {
     const html = renderToStaticMarkup(module.default({ children: <div>content</div> }));
     expect(html).toContain("href=\"/contact\"");
     expect(html).not.toContain("/#contact");
-    expect(html).toContain("Simon Morin - Agent de location");
+    expect(html).toContain("Simon Morin");
+    expect(html).toContain("Navigation mobile");
+    expect(html).toContain("Voir les logements");
   });
 });

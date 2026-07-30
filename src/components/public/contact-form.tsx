@@ -66,50 +66,70 @@ export function PublicContactForm() {
   return (
     <form onSubmit={onSubmit} className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <h2 className="text-xl font-bold text-slate-900">Formulaire de contact general</h2>
-      <input
-        className="rounded-lg border border-slate-300 px-3 py-2"
-        placeholder="Nom"
-        value={form.name}
-        onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-        required
-      />
-      <input
-        className="rounded-lg border border-slate-300 px-3 py-2"
-        placeholder="Telephone"
-        value={form.phone}
-        onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
-        required
-      />
-      <input
-        className="rounded-lg border border-slate-300 px-3 py-2"
-        placeholder="Courriel"
-        type="email"
-        value={form.email}
-        onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
-      />
-      <select
-        className="rounded-lg border border-slate-300 px-3 py-2"
-        value={form.preferredContactMethod}
-        onChange={(event) =>
-          setForm((current) => ({
-            ...current,
-            preferredContactMethod: event.target.value as ContactFormState["preferredContactMethod"],
-          }))
-        }
-      >
-        <option value="PHONE">Telephone</option>
-        <option value="EMAIL">Courriel</option>
-        <option value="SMS">SMS</option>
-        <option value="MESSENGER">Messenger</option>
-        <option value="OTHER">Autre</option>
-      </select>
-      <textarea
-        className="min-h-28 rounded-lg border border-slate-300 px-3 py-2"
-        placeholder="Message"
-        value={form.message}
-        onChange={(event) => setForm((current) => ({ ...current, message: event.target.value }))}
-        required
-      />
+      <label className="grid gap-1 text-sm font-medium text-slate-800">
+        Nom
+        <input
+          className="min-h-12 rounded-lg border border-slate-300 px-3 text-base"
+          placeholder="Votre nom"
+          autoComplete="name"
+          value={form.name}
+          onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+          required
+        />
+      </label>
+      <label className="grid gap-1 text-sm font-medium text-slate-800">
+        Telephone
+        <input
+          className="min-h-12 rounded-lg border border-slate-300 px-3 text-base"
+          placeholder="819-388-3407"
+          autoComplete="tel"
+          inputMode="tel"
+          value={form.phone}
+          onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
+          required
+        />
+      </label>
+      <label className="grid gap-1 text-sm font-medium text-slate-800">
+        Courriel
+        <input
+          className="min-h-12 rounded-lg border border-slate-300 px-3 text-base"
+          placeholder="vous@exemple.com"
+          type="email"
+          autoComplete="email"
+          inputMode="email"
+          value={form.email}
+          onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
+        />
+      </label>
+      <label className="grid gap-1 text-sm font-medium text-slate-800">
+        Methode de contact preferee
+        <select
+          className="min-h-12 rounded-lg border border-slate-300 px-3 text-base"
+          value={form.preferredContactMethod}
+          onChange={(event) =>
+            setForm((current) => ({
+              ...current,
+              preferredContactMethod: event.target.value as ContactFormState["preferredContactMethod"],
+            }))
+          }
+        >
+          <option value="PHONE">Telephone</option>
+          <option value="EMAIL">Courriel</option>
+          <option value="SMS">SMS</option>
+          <option value="MESSENGER">Messenger</option>
+          <option value="OTHER">Autre</option>
+        </select>
+      </label>
+      <label className="grid gap-1 text-sm font-medium text-slate-800">
+        Message
+        <textarea
+          className="min-h-28 rounded-lg border border-slate-300 px-3 py-2 text-base"
+          placeholder="Votre message"
+          value={form.message}
+          onChange={(event) => setForm((current) => ({ ...current, message: event.target.value }))}
+          required
+        />
+      </label>
 
       <div className="hidden" aria-hidden>
         <label htmlFor="company">Entreprise</label>
@@ -134,7 +154,7 @@ export function PublicContactForm() {
       <button
         type="submit"
         disabled={loading}
-        className="rounded-full bg-emerald-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+        className="min-h-[52px] w-full rounded-full bg-emerald-600 px-4 text-base font-semibold text-white disabled:opacity-60"
       >
         {loading ? "Envoi..." : "Envoyer"}
       </button>

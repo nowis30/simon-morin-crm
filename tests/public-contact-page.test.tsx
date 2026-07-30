@@ -20,6 +20,8 @@ describe("public contact page", () => {
     expect(html).toContain("href=\"tel:+18193883407\"");
     expect(html).toContain("href=\"mailto:simonmorin@nowis.store\"");
     expect(html).toContain("href=\"https://m.me/public\"");
+    expect(html).toContain("Appeler 819-388-3407");
+    expect(html).toContain("Envoyer un courriel");
   });
 
   it("keeps official links and hides messenger action when missing", async () => {

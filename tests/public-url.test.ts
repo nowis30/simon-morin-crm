@@ -20,4 +20,10 @@ describe("getPublicAppUrl", () => {
 
     expect(getPublicAppUrl()).toBe("https://example.onrender.com");
   });
+
+  it("uses the local port fallback when no deployment URL is configured", () => {
+    process.env.PORT = "10000";
+
+    expect(getPublicAppUrl()).toBe("http://127.0.0.1:10000");
+  });
 });

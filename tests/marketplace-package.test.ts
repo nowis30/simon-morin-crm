@@ -45,7 +45,7 @@ describe("marketplace package", () => {
     const result = buildMarketplacePublicText(createRecord());
     expect(result.text).toContain("Telephone : 819-388-3407");
     expect(result.text).toContain("Courriel : simonmorin@nowis.store");
-    expect(result.text).toContain("https://logements.nowis.store/logements/unit-1");
+    expect(result.text).toContain("/logements/unit-1");
   });
 
   it("n'inclut pas l'adresse complete ni le code ISR", () => {
@@ -84,7 +84,7 @@ describe("marketplace package", () => {
     const instructions = await zip.file("instructions.txt")!.async("string");
 
     expect(adText).toBe(text);
-    expect(linkText).toBe("https://logements.nowis.store/logements/unit-1");
+    expect(linkText).toContain("/logements/unit-1");
     expect(instructions).toContain("1. Ouvrez Facebook Marketplace.");
   });
 

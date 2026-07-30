@@ -4,6 +4,7 @@ import { AUTH_COOKIE_NAME } from "@/lib/auth";
 const PUBLIC_PATHS = [
   "/",
   "/logements",
+  "/contact",
   "/catalog",
   "/login",
   "/setup",

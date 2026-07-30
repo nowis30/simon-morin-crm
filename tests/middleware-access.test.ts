@@ -9,7 +9,9 @@ describe("middleware public/private separation", () => {
       new NextRequest("http://localhost/"),
       new NextRequest("http://localhost/logements"),
       new NextRequest("http://localhost/logements/unit-1"),
+      new NextRequest("http://localhost/contact"),
       new NextRequest("http://localhost/api/public/catalog"),
+      new NextRequest("http://localhost/api/public/contact"),
     ];
 
     for (const request of publicRequests) {

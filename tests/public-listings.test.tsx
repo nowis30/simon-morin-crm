@@ -2,11 +2,12 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { NextRequest } from "next/server";
 import { ListingPhotoGallery } from "../src/components/public/listing-photo-gallery.tsx";
 
 const mockPrisma = {
-  rentalUnit: { findMany: vi.fn() },
-  property: { findMany: vi.fn() },
+  rentalUnit: { count: vi.fn(), findMany: vi.fn() },
+  property: { count: vi.fn(), findMany: vi.fn() },
 };
 
 vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
@@ -16,6 +17,9 @@ vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 describe("public listing catalog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockPrisma.rentalUnit.count.mockResolvedValue(1);
+    mockPrisma.property.count.mockResolvedValue(0);
+    mockPrisma.property.findMany.mockResolvedValue([]);
   });
 
   it("returns imageUrl and photoCount from unit and building photos with deduplication", async () => {
@@ -41,16 +45,19 @@ describe("public listing catalog", () => {
           district: "Plateau",
           name: "Le Bâtiment",
           photos: [{ url: "https://cdn.example.com/building-1.jpg", description: "Entrée", sortOrder: 0 }],
+          _count: { photos: 1 },
         },
         photos: [
           { url: "https://cdn.example.com/unit-main.jpg", description: null, sortOrder: 0 },
           { url: "https://cdn.example.com/unit-2.jpg", description: "Salon", sortOrder: 1 },
         ],
+        _count: { photos: 2 },
+        updatedAt: new Date(),
       },
     ]);
 
     const { GET } = await import("@/app/api/public/catalog/route");
-    const response = await GET();
+    const response = await GET(new NextRequest("http://localhost/api/public/catalog"));
     const json = await response.json();
 
     expect(json.items[0]).toMatchObject({

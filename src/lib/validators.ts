@@ -122,6 +122,31 @@ export const publicVisitSubmissionSchema = z.object({
   }),
 });
 
+export const publicContactSubmissionSchema = z.object({
+  name: z.string().min(2).max(120),
+  phone: z.string().min(7).max(30),
+  email: z.string().email().optional().or(z.literal("")),
+  preferredContactMethod: z.enum(["PHONE", "EMAIL", "SMS", "MESSENGER", "OTHER"]).default("PHONE"),
+  message: z.string().min(10).max(2000),
+  consent: z.literal(true),
+  honeypot: z.string().max(200).optional().or(z.literal("")),
+});
+
+export const publicCatalogQuerySchema = z.object({
+  q: z.string().max(120).optional(),
+  city: z.string().max(120).optional(),
+  district: z.string().max(120).optional(),
+  bedrooms: z.coerce.number().int().min(0).max(10).optional(),
+  maxPrice: z.coerce.number().int().min(1).max(20000).optional(),
+  propertyType: z.string().max(80).optional(),
+  petsAllowed: z.enum(["true", "false"]).optional(),
+  parking: z.enum(["true", "false"]).optional(),
+  availability: z.enum(["known", "any"]).optional(),
+  sort: z.enum(["price_asc", "price_desc", "bedrooms_desc", "availability_soon"]).default("price_asc"),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(48).default(24),
+});
+
 export const visitApprovalSchema = z.object({
   approved: z.boolean(),
   notes: z.string().max(1000).optional(),

@@ -32,12 +32,12 @@ export const metadata: Metadata = {
 const publicLinks = [
   { href: "/", label: "Accueil" },
   { href: "/logements", label: "Logements disponibles" },
-  { href: "/#contact", label: "Contact" },
+  { href: "/contact", label: "Contact" },
 ];
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
-  const publicPhone = env.PUBLIC_CONTACT_PHONE || "Telephone disponible sur demande";
-  const publicEmail = env.PUBLIC_CONTACT_EMAIL || "contact@simonmorin-location.ca";
+  const publicPhone = env.PUBLIC_CONTACT_PHONE?.trim();
+  const publicEmail = env.PUBLIC_CONTACT_EMAIL?.trim();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 via-white to-emerald-50 text-slate-900">
@@ -78,13 +78,13 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
 
       <main>{children}</main>
 
-      <footer id="contact" className="mt-14 border-t border-amber-200 bg-slate-950 text-slate-200">
+      <footer className="mt-14 border-t border-amber-200 bg-slate-950 text-slate-200">
         <div className="mx-auto grid w-full max-w-6xl gap-6 px-4 py-10 md:grid-cols-2 md:px-6">
           <div className="space-y-2">
             <h2 className="text-lg font-bold text-white">Simon Morin - Agent de location</h2>
             <p className="text-sm text-slate-300">Drummondville et environs</p>
-            <p className="text-sm text-slate-300">Courriel: {publicEmail}</p>
-            <p className="text-sm text-slate-300">Telephone: {publicPhone}</p>
+            {publicEmail ? <p className="text-sm text-slate-300">Courriel: {publicEmail}</p> : null}
+            {publicPhone ? <p className="text-sm text-slate-300">Telephone: {publicPhone}</p> : null}
           </div>
           <div className="space-y-3 md:text-right">
             <Link href="/privacy" className="block text-sm text-slate-300 hover:text-white">

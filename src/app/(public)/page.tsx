@@ -1,20 +1,38 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-type CatalogItem = {
-  id: string;
-  address: string;
-  city: string;
-  district?: string | null;
-  monthlyPrice: number;
-  bedrooms: number;
-  propertyType: string;
-  imageUrl?: string | null;
-  photoCount?: number;
-  features: string[];
-  petsAllowed?: boolean;
-  parking?: boolean;
-};
+async function getCatalogItems() {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/public/catalog`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    return [] as Array<{
+      id: string;
+      address: string;
+      city: string;
+      district?: string | null;
+      monthlyPrice: number;
+      bedrooms: number;
+      propertyType: string;
+      imageUrl?: string | null;
+      photoCount?: number;
+    }>;
+  }
+
+  const data = await response.json();
+  return (data.items as Array<{
+    id: string;
+    address: string;
+    city: string;
+    district?: string | null;
+    monthlyPrice: number;
+    bedrooms: number;
+    propertyType: string;
+    imageUrl?: string | null;
+    photoCount?: number;
+  }>).slice(0, 3);
+}
 
 export const metadata: Metadata = {
   title: "Logements a louer a Drummondville | Simon Morin",
@@ -25,24 +43,11 @@ export const metadata: Metadata = {
   },
 };
 
-async function getCatalogItems() {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/public/catalog`, {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    return [] as CatalogItem[];
-  }
-
-  const data = await response.json();
-  return (data.items as CatalogItem[]).slice(0, 3);
-}
-
 export default async function HomePage() {
   const featuredItems = await getCatalogItems();
 
   return (
-    <main>
+    <>
       <section className="relative overflow-hidden border-b border-amber-100 bg-gradient-to-br from-amber-100 via-orange-50 to-emerald-100">
         <div className="pointer-events-none absolute -right-20 -top-16 h-64 w-64 rounded-full bg-amber-300/30 blur-3xl" />
         <div className="pointer-events-none absolute -left-20 bottom-0 h-64 w-64 rounded-full bg-emerald-300/30 blur-3xl" />
@@ -51,13 +56,21 @@ export default async function HomePage() {
             <p className="inline-flex rounded-full border border-amber-300 bg-white/80 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">
               Drummondville et les environs
             </p>
-            <h1 className="text-4xl font-black leading-tight text-slate-900 md:text-5xl">
-              Simon Morin - Agent de location
-            </h1>
+            <h1 className="text-4xl font-black leading-tight text-slate-900 md:text-5xl">Simon Morin - Agent de location</h1>
             <p className="text-xl font-semibold text-slate-800">Trouvez votre prochain logement a Drummondville et dans les environs.</p>
             <p className="max-w-2xl text-base text-slate-700">
               Consultez les logements disponibles, decouvrez les photos et les caracteristiques, puis envoyez directement votre demande de visite.
             </p>
+
+            <form action="/logements" method="get" className="grid gap-3 rounded-2xl border border-amber-200 bg-white/80 p-4 sm:grid-cols-3">
+              <input name="city" placeholder="Ville ou secteur" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              <input name="bedrooms" type="number" min={0} placeholder="Chambres" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              <input name="maxPrice" type="number" min={0} placeholder="Prix maximal" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              <button type="submit" className="sm:col-span-3 rounded-full bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow transition hover:bg-emerald-500">
+                Rechercher
+              </button>
+            </form>
+
             <div className="flex flex-wrap items-center gap-3">
               <Link href="/logements" className="rounded-full bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow transition hover:bg-emerald-500">
                 Voir les logements disponibles
@@ -117,24 +130,6 @@ export default async function HomePage() {
           </div>
         )}
       </section>
-
-      <section className="bg-emerald-900/95 text-white">
-        <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-14 md:grid-cols-2 md:px-6">
-          <div className="space-y-3">
-            <h2 className="text-2xl font-black">Un accompagnement simple et humain</h2>
-            <p className="text-sm text-emerald-100">
-              Vous cherchez un logement dans Drummondville ou les environs? Le processus est simple: selection d'un logement, envoi de la demande, puis validation manuelle avec Simon.
-            </p>
-          </div>
-          <div className="rounded-2xl border border-emerald-700 bg-emerald-950/40 p-5">
-            <h3 className="text-lg font-bold">Contact</h3>
-            <p className="mt-2 text-sm text-emerald-100">Utilisez le formulaire de visite sur chaque fiche logement pour recevoir un retour rapide.</p>
-            <Link href="/logements" className="mt-4 inline-flex rounded-full bg-white px-5 py-2 text-sm font-bold text-emerald-900">
-              Trouver un logement
-            </Link>
-          </div>
-        </div>
-      </section>
-    </main>
+    </>
   );
 }

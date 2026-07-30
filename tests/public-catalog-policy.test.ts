@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { NextRequest } from "next/server";
 
 const mockPrisma = {
-  rentalUnit: { findMany: vi.fn() },
-  property: { findMany: vi.fn() },
+  rentalUnit: { count: vi.fn(), findMany: vi.fn() },
+  property: { count: vi.fn(), findMany: vi.fn() },
 };
 
 vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
@@ -10,6 +11,9 @@ vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
 describe("public catalog policy", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockPrisma.rentalUnit.count.mockResolvedValue(1);
+    mockPrisma.property.count.mockResolvedValue(0);
+    mockPrisma.property.findMany.mockResolvedValue([]);
   });
 
   it("returns only strictly available units and masks internal-only fields", async () => {
@@ -36,8 +40,12 @@ describe("public catalog policy", () => {
           district: "Centre",
           name: "Le Lilas",
           photos: [{ url: "https://cdn.example.com/b1.jpg", description: null }],
+          _count: { photos: 1 },
         },
         photos: [{ url: "https://cdn.example.com/u1.jpg", description: null }],
+        _count: { photos: 1 },
+        displayOrder: 1,
+        updatedAt: new Date(),
       },
       {
         id: "unit-rented",
@@ -53,8 +61,11 @@ describe("public catalog policy", () => {
         parking: false,
         inclusions: "",
         primaryPhotoUrl: null,
-        building: { address: "99 rue X", city: "Drummondville", district: null, name: "X", photos: [] },
+        building: { address: "99 rue X", city: "Drummondville", district: null, name: "X", photos: [], _count: { photos: 0 } },
         photos: [],
+        _count: { photos: 0 },
+        displayOrder: 2,
+        updatedAt: new Date(),
       },
       {
         id: "unit-hidden",
@@ -70,13 +81,16 @@ describe("public catalog policy", () => {
         parking: false,
         inclusions: "",
         primaryPhotoUrl: null,
-        building: { address: "55 rue Y", city: "Drummondville", district: null, name: "Y", photos: [] },
+        building: { address: "55 rue Y", city: "Drummondville", district: null, name: "Y", photos: [], _count: { photos: 0 } },
         photos: [],
+        _count: { photos: 0 },
+        displayOrder: 3,
+        updatedAt: new Date(),
       },
     ]);
 
     const { GET } = await import("@/app/api/public/catalog/route");
-    const response = await GET();
+    const response = await GET(new NextRequest("http://localhost/api/public/catalog"));
     const json = await response.json();
 
     expect(json.items).toHaveLength(1);

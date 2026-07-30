@@ -182,13 +182,13 @@ export default async function HomePage() {
 
       <section className="mx-auto w-full max-w-6xl px-4 pb-4 md:px-6 md:pb-8">
         <div className="rounded-3xl border border-white/70 bg-white/85 p-4 shadow-sm md:grid md:grid-cols-[1.05fr_0.95fr] md:items-center md:gap-6 md:p-5">
-          <div className="relative h-64 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          <div className="relative mx-auto aspect-[864/1821] w-full max-w-sm overflow-hidden rounded-2xl border border-slate-200 bg-white md:max-w-none">
             <Image
               src="/annonce.png"
               alt="Logements a louer a Drummondville avec Simon Morin"
               fill
               className="object-contain"
-              sizes="(max-width: 768px) 100vw, 45vw"
+              sizes="(max-width: 768px) 92vw, 45vw"
               loading="lazy"
             />
           </div>
@@ -197,6 +197,12 @@ export default async function HomePage() {
             <p className="text-sm text-slate-700">
               Chaque demande est traitee directement par Simon pour offrir une prise de rendez-vous simple et rapide.
             </p>
+            <a
+              href={`sms:${OFFICIAL_PUBLIC_PHONE_TECHNICAL}?body=Bonjour%20Simon%2C%20je%20souhaite%20des%20informations%20sur%20un%20logement.`}
+              className="inline-flex min-h-11 items-center rounded-full border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
+            >
+              Envoyer un SMS
+            </a>
           </div>
         </div>
       </section>

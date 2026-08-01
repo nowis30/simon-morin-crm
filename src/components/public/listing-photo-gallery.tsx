@@ -115,7 +115,7 @@ export function ListingPhotoGallery({ title, unitPhotos, buildingPhotos }: Props
         style={{ touchAction: "pan-y" }}
         data-testid="listing-gallery-frame"
       >
-        <div className="relative h-[42vh] min-h-[240px] max-h-[420px] w-full md:aspect-[4/3] md:h-auto md:max-h-none md:min-h-0">
+        <div className="relative h-[32vh] min-h-[220px] max-h-[320px] w-full md:aspect-[4/3] md:h-auto md:max-h-none md:min-h-0">
           {!activePhotoBroken ? (
             <Image
               src={activePhoto.url}

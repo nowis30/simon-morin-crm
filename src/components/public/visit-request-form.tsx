@@ -126,21 +126,21 @@ export function VisitRequestForm({ propertyId, rentalUnitId, unavailable }: { pr
   }
 
   return (
-    <form id="visit-request-form" onSubmit={submitVisit} className="mt-5 space-y-4">
-      <label className="grid gap-1 text-sm font-medium text-slate-800">
+    <form id="visit-request-form" onSubmit={submitVisit} className="mt-4 space-y-3 md:mt-5 md:space-y-4">
+      <label className="grid gap-1 text-xs font-medium text-slate-800 md:text-sm">
         Nom complet
         <input
           required
           autoComplete="name"
           value={form.name}
           onChange={(event) => setForm({ ...form, name: event.target.value })}
-          className="min-h-12 w-full rounded-lg border border-slate-300 bg-white px-3 text-base"
+          className="min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm md:min-h-12 md:text-base"
           placeholder="Votre nom"
         />
         {fieldErrors.name ? <span className="text-xs text-rose-600">{fieldErrors.name}</span> : null}
       </label>
 
-      <label className="grid gap-1 text-sm font-medium text-slate-800">
+      <label className="grid gap-1 text-xs font-medium text-slate-800 md:text-sm">
         Telephone
         <input
           required
@@ -148,13 +148,13 @@ export function VisitRequestForm({ propertyId, rentalUnitId, unavailable }: { pr
           inputMode="tel"
           value={form.phone}
           onChange={(event) => setForm({ ...form, phone: event.target.value })}
-          className="min-h-12 w-full rounded-lg border border-slate-300 bg-white px-3 text-base"
+          className="min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm md:min-h-12 md:text-base"
           placeholder="819-388-3407"
         />
         {fieldErrors.phone ? <span className="text-xs text-rose-600">{fieldErrors.phone}</span> : null}
       </label>
 
-      <label className="grid gap-1 text-sm font-medium text-slate-800">
+      <label className="grid gap-1 text-xs font-medium text-slate-800 md:text-sm">
         Courriel
         <input
           type="email"
@@ -162,25 +162,25 @@ export function VisitRequestForm({ propertyId, rentalUnitId, unavailable }: { pr
           inputMode="email"
           value={form.email}
           onChange={(event) => setForm({ ...form, email: event.target.value })}
-          className="min-h-12 w-full rounded-lg border border-slate-300 bg-white px-3 text-base"
+          className="min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm md:min-h-12 md:text-base"
           placeholder="vous@exemple.com"
         />
         {fieldErrors.email ? <span className="text-xs text-rose-600">{fieldErrors.email}</span> : null}
       </label>
 
-      <label className="grid gap-1 text-sm font-medium text-slate-800">
+      <label className="grid gap-1 text-xs font-medium text-slate-800 md:text-sm">
         Date d&apos;emmenagement souhaitee
         <input
           type="date"
           autoComplete="off"
           value={form.moveInDate}
           onChange={(event) => setForm({ ...form, moveInDate: event.target.value })}
-          className="min-h-12 w-full rounded-lg border border-slate-300 bg-white px-3 text-base"
+          className="min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm md:min-h-12 md:text-base"
         />
       </label>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <label className="grid gap-1 text-sm font-medium text-slate-800">
+      <div className="grid grid-cols-1 gap-2 md:gap-3 sm:grid-cols-2">
+        <label className="grid gap-1 text-xs font-medium text-slate-800 md:text-sm">
           Nombre d&apos;occupants
           <input
             type="number"
@@ -189,11 +189,11 @@ export function VisitRequestForm({ propertyId, rentalUnitId, unavailable }: { pr
             max={12}
             value={form.occupantsCount}
             onChange={(event) => setForm({ ...form, occupantsCount: event.target.value })}
-            className="min-h-12 w-full rounded-lg border border-slate-300 bg-white px-3 text-base"
+            className="min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm md:min-h-12 md:text-base"
             placeholder="1"
           />
         </label>
-        <label className="grid gap-1 text-sm font-medium text-slate-800">
+        <label className="grid gap-1 text-xs font-medium text-slate-800 md:text-sm">
           Budget maximal
           <input
             type="number"
@@ -201,14 +201,14 @@ export function VisitRequestForm({ propertyId, rentalUnitId, unavailable }: { pr
             min={0}
             value={form.maxBudget}
             onChange={(event) => setForm({ ...form, maxBudget: event.target.value })}
-            className="min-h-12 w-full rounded-lg border border-slate-300 bg-white px-3 text-base"
+            className="min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm md:min-h-12 md:text-base"
             placeholder="1500"
           />
         </label>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <label className="grid gap-1 text-sm font-medium text-slate-800">
+      <div className="grid grid-cols-1 gap-2 md:gap-3 sm:grid-cols-2">
+        <label className="grid gap-1 text-xs font-medium text-slate-800 md:text-sm">
           Chambres recherchees
           <input
             type="number"
@@ -217,39 +217,39 @@ export function VisitRequestForm({ propertyId, rentalUnitId, unavailable }: { pr
             max={10}
             value={form.bedroomsNeeded}
             onChange={(event) => setForm({ ...form, bedroomsNeeded: event.target.value })}
-            className="min-h-12 w-full rounded-lg border border-slate-300 bg-white px-3 text-base"
+            className="min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm md:min-h-12 md:text-base"
             placeholder="1"
           />
         </label>
-        <label className="grid gap-1 text-sm font-medium text-slate-800">
+        <label className="grid gap-1 text-xs font-medium text-slate-800 md:text-sm">
           Date et heure souhaitees
           <input
             required
             type="datetime-local"
             value={form.startsAt}
             onChange={(event) => setForm({ ...form, startsAt: event.target.value })}
-            className="min-h-12 w-full rounded-lg border border-slate-300 bg-white px-3 text-base"
+            className="min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm md:min-h-12 md:text-base"
           />
           {fieldErrors.startsAt ? <span className="text-xs text-rose-600">{fieldErrors.startsAt}</span> : null}
         </label>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <label className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700"><input type="checkbox" checked={form.hasPets} onChange={(event) => setForm({ ...form, hasPets: event.target.checked })} /> Presence d&apos;animaux</label>
-        <label className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700"><input type="checkbox" checked={form.needsParking} onChange={(event) => setForm({ ...form, needsParking: event.target.checked })} /> Besoin de stationnement</label>
+      <div className="grid grid-cols-1 gap-2 md:gap-3 sm:grid-cols-2">
+        <label className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs text-slate-700 md:min-h-11 md:text-sm"><input type="checkbox" checked={form.hasPets} onChange={(event) => setForm({ ...form, hasPets: event.target.checked })} /> Presence d&apos;animaux</label>
+        <label className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs text-slate-700 md:min-h-11 md:text-sm"><input type="checkbox" checked={form.needsParking} onChange={(event) => setForm({ ...form, needsParking: event.target.checked })} /> Besoin de stationnement</label>
       </div>
 
-      <label className="grid gap-1 text-sm font-medium text-slate-800">
+      <label className="grid gap-1 text-xs font-medium text-slate-800 md:text-sm">
         Vos disponibilites pour une visite
-        <textarea value={form.availabilityNotes} onChange={(event) => setForm({ ...form, availabilityNotes: event.target.value })} className="min-h-24 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base" placeholder="Ex: mardi soir, mercredi matin" />
+        <textarea value={form.availabilityNotes} onChange={(event) => setForm({ ...form, availabilityNotes: event.target.value })} className="min-h-20 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm md:min-h-24 md:text-base" placeholder="Ex: mardi soir, mercredi matin" />
       </label>
 
-      <label className="grid gap-1 text-sm font-medium text-slate-800">
+      <label className="grid gap-1 text-xs font-medium text-slate-800 md:text-sm">
         Message complementaire
-        <textarea value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} className="min-h-24 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base" placeholder="Vos questions" />
+        <textarea value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} className="min-h-20 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm md:min-h-24 md:text-base" placeholder="Vos questions" />
       </label>
 
-      <button className="min-h-[52px] w-full rounded-full bg-emerald-600 px-4 text-base font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60" type="submit" disabled={isSubmitting}>
+      <button className="min-h-11 w-full rounded-full bg-emerald-600 px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 md:min-h-[52px] md:text-base" type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Envoi en cours..." : "Envoyer la demande"}
       </button>
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}

@@ -175,11 +175,11 @@ export function ListingPhotoGallery({ title, unitPhotos, buildingPhotos }: Props
             </button>
           ) : null}
 
-          <div className="absolute bottom-2 right-2 flex gap-1.5">
+          <div className="absolute inset-x-2 bottom-2 flex items-center justify-end gap-1.5">
             <button
               type="button"
               onClick={() => setIsFullscreen(true)}
-              className="inline-flex min-h-10 items-center rounded-full border border-white/40 bg-black/60 px-2.5 text-[11px] font-semibold text-white"
+              className="inline-flex min-h-10 max-w-[45%] items-center justify-center rounded-full border border-white/40 bg-black/60 px-2.5 text-[11px] font-semibold text-white"
             >
               Agrandir
             </button>
@@ -187,9 +187,10 @@ export function ListingPhotoGallery({ title, unitPhotos, buildingPhotos }: Props
               href={activePhoto.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-10 items-center rounded-full border border-white/40 bg-black/60 px-2.5 text-[11px] font-semibold text-white"
+              className="inline-flex min-h-10 max-w-[55%] items-center justify-center rounded-full border border-white/40 bg-black/60 px-2.5 text-[11px] font-semibold text-white"
             >
-              Ouvrir la photo originale
+              <span className="sm:hidden">Originale</span>
+              <span className="hidden sm:inline">Ouvrir la photo originale</span>
             </a>
           </div>
         </div>

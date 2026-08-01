@@ -107,11 +107,11 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
 
     return (
       <>
-        <main className="min-h-screen bg-transparent px-4 py-4 pb-44 text-slate-900 md:px-6 md:py-10 md:pb-10">
-          <div className="mx-auto flex max-w-6xl flex-col gap-4 md:gap-5">
+        <main className="min-h-screen overflow-x-hidden bg-transparent px-4 py-4 pb-44 text-slate-900 md:px-6 md:py-10 md:pb-10">
+          <div className="mx-auto flex max-w-6xl min-w-0 flex-col gap-4 md:gap-5">
             <Link href="/logements" className="inline-flex min-h-11 items-center text-sm font-semibold text-emerald-700">← Retour aux logements</Link>
-            <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-              <section className="space-y-3 md:space-y-4">
+            <div className="grid min-w-0 gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+              <section className="min-w-0 space-y-3 md:space-y-4">
                 <div className="-mx-4 overflow-hidden bg-slate-950 md:mx-0 md:rounded-2xl md:border md:border-slate-200 md:bg-white">
                   {item.photoCount > 0 ? (
                     <ListingPhotoGallery title={item.address} unitPhotos={item.unitPhotos} buildingPhotos={item.buildingPhotos} />
@@ -147,11 +147,11 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
                     </ul>
                   </div>
 
-                  <p className="mt-4 text-sm leading-6 text-slate-700 md:mt-5">{item.description}</p>
+                  <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 md:mt-5">{item.description}</p>
                 </div>
               </section>
 
-              <aside className="rounded-2xl border border-slate-200 bg-white p-3 md:p-6">
+              <aside className="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 md:p-6">
                 <h2 className="text-lg font-semibold text-slate-900 md:text-xl">Demander une visite</h2>
                 <p className="mt-1.5 text-xs text-slate-600 md:mt-2 md:text-sm">Votre demande sera transmise a Simon pour confirmation manuelle.</p>
 
@@ -235,11 +235,11 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
 
   return (
     <>
-      <main className="min-h-screen bg-transparent px-4 py-4 pb-44 text-slate-900 md:px-6 md:py-10 md:pb-10">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 md:gap-5">
+      <main className="min-h-screen overflow-x-hidden bg-transparent px-4 py-4 pb-44 text-slate-900 md:px-6 md:py-10 md:pb-10">
+        <div className="mx-auto flex max-w-6xl min-w-0 flex-col gap-4 md:gap-5">
           <Link href="/logements" className="inline-flex min-h-11 items-center text-sm font-semibold text-emerald-700">← Retour aux logements</Link>
-          <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-            <section className="space-y-3 md:space-y-4">
+          <div className="grid min-w-0 gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+            <section className="min-w-0 space-y-3 md:space-y-4">
               <div className="-mx-4 overflow-hidden bg-slate-950 md:mx-0 md:rounded-2xl md:border md:border-slate-200 md:bg-white">
                 {fallbackItem.photoCount > 0 ? (
                   <ListingPhotoGallery title={fallbackItem.address} unitPhotos={fallbackItem.unitPhotos} />
@@ -261,11 +261,11 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
                     {fallbackItem.features.map((feature: string) => <li key={feature}>• {feature}</li>)}
                   </ul>
                 </div>
-                <p className="mt-4 text-sm leading-6 text-slate-700 md:mt-5">{fallbackItem.description}</p>
+                <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 md:mt-5">{fallbackItem.description}</p>
               </div>
             </section>
 
-            <aside className="rounded-2xl border border-slate-200 bg-white p-3 md:p-6">
+            <aside className="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 md:p-6">
               <h2 className="text-lg font-semibold text-slate-900 md:text-xl">Demander une visite</h2>
               <p className="mt-1.5 text-xs text-slate-600 md:mt-2 md:text-sm">Votre demande sera transmise a Simon pour confirmation manuelle.</p>
               <a href="#visit-request-form" className="mt-3 inline-flex min-h-[48px] w-full items-center justify-center rounded-full bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-500 md:mt-4">

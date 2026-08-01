@@ -60,7 +60,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
   const publicEmail = env.PUBLIC_CONTACT_EMAIL?.trim() || OFFICIAL_PUBLIC_EMAIL;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50 via-slate-50 to-emerald-50 text-slate-900">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-b from-amber-50 via-slate-50 to-emerald-50 text-slate-900">
       <header className="sticky top-0 z-40 border-b border-amber-200/60 bg-white/90 backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-3 md:px-6 md:py-4">
           <Link href="/" className="flex items-center gap-2 text-slate-900" aria-label="Accueil Simon Morin">
@@ -96,7 +96,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
         </div>
       </header>
 
-      <main className="pb-[calc(env(safe-area-inset-bottom)+5.25rem)] md:pb-0">{children}</main>
+      <main className="overflow-x-hidden pb-[calc(env(safe-area-inset-bottom)+5.25rem)] md:pb-0">{children}</main>
 
       <footer className="mt-10 border-t border-slate-200 bg-white/95">
         <div className="mx-auto grid w-full max-w-6xl gap-6 px-4 py-6 md:grid-cols-2 md:px-6 md:py-8">

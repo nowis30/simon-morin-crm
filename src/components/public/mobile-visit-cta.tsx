@@ -1,11 +1,33 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 type Props = {
   priceLabel: string;
   targetId: string;
 };
 
 export function MobileVisitCta({ priceLabel, targetId }: Props) {
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    const target = document.getElementById(targetId);
+    if (!target) {
+      setIsVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(!entry.isIntersecting);
+      },
+      { threshold: 0.15 },
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [targetId]);
+
   function scrollToForm() {
     const target = document.getElementById(targetId);
     if (!target) {
@@ -13,6 +35,10 @@ export function MobileVisitCta({ priceLabel, targetId }: Props) {
     }
 
     target.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  if (!isVisible) {
+    return null;
   }
 
   return (

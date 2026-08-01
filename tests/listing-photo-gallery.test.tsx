@@ -75,7 +75,7 @@ describe("listing photo gallery", () => {
     const activeThumb = screen.getAllByRole("button").find((node) => node.getAttribute("aria-current") === "true");
     expect(activeThumb).toBeTruthy();
 
-    const openOriginal = screen.getByRole("link", { name: "Ouvrir la photo originale" });
+    const openOriginal = screen.getByRole("link", { name: /photo originale|originale/i });
     expect(openOriginal.getAttribute("target")).toBe("_blank");
     expect(openOriginal.getAttribute("rel")).toBe("noopener noreferrer");
   });

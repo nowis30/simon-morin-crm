@@ -5,9 +5,9 @@ export const dynamic = "force-dynamic";
 
 function MetricCard({ title, value }: { title: string; value: number | string }) {
   return (
-    <div className="card p-4">
+    <div className="card min-w-0 p-4">
       <p className="text-sm text-emerald-800">{title}</p>
-      <p className="mt-2 font-[family-name:var(--font-barlow-condensed)] text-3xl font-bold">{value}</p>
+      <p className="mt-2 break-words font-[family-name:var(--font-barlow-condensed)] text-3xl font-bold">{value}</p>
     </div>
   );
 }
@@ -43,7 +43,7 @@ export default async function DashboardPage() {
   return (
     <section className="grid gap-4">
       <div>
-        <h2 className="font-[family-name:var(--font-barlow-condensed)] text-4xl font-bold">Tableau de bord</h2>
+        <h2 className="font-[family-name:var(--font-barlow-condensed)] text-3xl font-bold md:text-4xl">Tableau de bord</h2>
         <p className="text-sm text-emerald-800">Suivi operationnel global</p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

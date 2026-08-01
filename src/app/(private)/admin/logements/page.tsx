@@ -128,27 +128,27 @@ export default function AdminLogementsPage() {
   }
 
   return (
-    <section className="grid gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="font-[family-name:var(--font-barlow-condensed)] text-4xl font-bold">Gestion des logements</h2>
+    <section className="grid min-w-0 gap-4">
+      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+        <div className="min-w-0">
+          <h2 className="font-[family-name:var(--font-barlow-condensed)] text-3xl font-bold leading-tight md:text-4xl">Gestion des logements</h2>
           <p className="text-sm text-emerald-800">Gestion, recherche, import/export CSV et synchronisation Gestion ISR</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
           <button type="button" className="rounded-lg border border-emerald-300 bg-white px-4 py-3 text-sm font-semibold" onClick={() => { window.location.href = "/api/properties/export"; }}>
             Exporter CSV
           </button>
         </div>
       </div>
 
-      <section className="card grid gap-3 border-2 border-emerald-400 p-5">
+      <section className="card grid min-w-0 gap-3 border-2 border-emerald-400 p-4 md:p-5">
         <div>
           <h3 className="font-[family-name:var(--font-barlow-condensed)] text-2xl font-bold">Mise a jour des logements a louer</h3>
           <p className="text-sm text-emerald-800">Utilise ce bouton pour ajouter les nouveaux logements Gestion ISR et retirer ceux qui ne sont plus affiches.</p>
         </div>
-        <form onSubmit={importGestionIsr} className="grid gap-3 md:grid-cols-[1fr_auto]">
+        <form onSubmit={importGestionIsr} className="grid min-w-0 gap-3 md:grid-cols-[1fr_auto]">
           <input name="url" placeholder="URL page logements Gestion ISR (optionnel si GESTION_ISR_LISTINGS_URL est configure)" className="rounded-lg border border-emerald-200 bg-white px-3 py-3" />
-          <button className="rounded-lg bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white" disabled={loading}>
+          <button className="min-h-11 rounded-lg bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white" disabled={loading}>
             {loading ? "Synchronisation..." : "Mettre a jour les logements"}
           </button>
         </form>
@@ -156,12 +156,12 @@ export default function AdminLogementsPage() {
         {notice ? <p className="text-sm text-emerald-700">{notice}</p> : null}
       </section>
 
-      <form onSubmit={importCsv} className="card flex flex-wrap items-center gap-3 p-4">
+      <form onSubmit={importCsv} className="card flex flex-col items-stretch gap-3 p-4 sm:flex-row sm:flex-wrap sm:items-center">
         <input type="file" name="file" accept=".csv,text/csv" className="rounded-lg border border-emerald-200 bg-white px-3 py-3" required />
-        <button className="rounded-lg border border-emerald-300 bg-white px-4 py-3 text-sm font-semibold">Importer CSV</button>
+        <button className="min-h-11 rounded-lg border border-emerald-300 bg-white px-4 py-3 text-sm font-semibold">Importer CSV</button>
       </form>
 
-      <form onSubmit={createProperty} className="card grid gap-3 p-4 md:grid-cols-2">
+      <form onSubmit={createProperty} className="card grid min-w-0 gap-3 p-4 md:grid-cols-2">
         <input className="rounded-lg border border-emerald-200 px-3 py-3" name="codeIsr" placeholder="Code ISR" required />
         <input className="rounded-lg border border-emerald-200 px-3 py-3" name="address" placeholder="Adresse" required />
         <input className="rounded-lg border border-emerald-200 px-3 py-3" name="city" placeholder="Ville" required />
@@ -176,12 +176,12 @@ export default function AdminLogementsPage() {
         <label className="inline-flex items-center gap-2"><input type="checkbox" name="parking" /> Stationnement</label>
         {error ? <p className="text-sm text-red-700 md:col-span-2">{error}</p> : null}
         {notice ? <p className="text-sm text-emerald-700 md:col-span-2">{notice}</p> : null}
-        <button className="rounded-lg bg-[var(--accent)] px-4 py-3 text-white md:col-span-2" disabled={loading}>{loading ? "Enregistrement..." : "Ajouter le logement"}</button>
+        <button className="min-h-11 rounded-lg bg-[var(--accent)] px-4 py-3 text-white md:col-span-2" disabled={loading}>{loading ? "Enregistrement..." : "Ajouter le logement"}</button>
       </form>
 
-      <div className="grid gap-3">
+      <div className="grid min-w-0 gap-3">
         {items.map((item) => (
-          <article key={item.id} className="card grid gap-3 p-4">
+          <article key={item.id} className="card grid min-w-0 gap-3 p-4">
             {item.photos?.[0] ? (
               <div className="overflow-hidden rounded-xl border border-emerald-100 bg-emerald-50">
                 <img src={item.photos[0].url} alt={item.photos[0].description || `${item.address}`} className="h-56 w-full object-cover" />
@@ -190,7 +190,7 @@ export default function AdminLogementsPage() {
               <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-emerald-200 bg-emerald-50 text-sm text-emerald-700">Aucune photo visible pour ce logement</div>
             )}
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-lg font-bold">{item.codeIsr} - {item.address}</h3>
+              <h3 className="text-lg font-bold break-words">{item.codeIsr} - {item.address}</h3>
               <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold">{item.status}</span>
             </div>
             <p className="text-sm">{item.city}{item.district ? `, ${item.district}` : ""} - {item.monthlyPrice}$ / mois - {item.bedrooms} ch.</p>

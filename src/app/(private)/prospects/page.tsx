@@ -67,13 +67,13 @@ export default function ProspectsPage() {
   }
 
   return (
-    <section className="grid gap-4">
+    <section className="grid min-w-0 gap-4">
       <div>
-        <h2 className="font-[family-name:var(--font-barlow-condensed)] text-4xl font-bold">Prospects</h2>
+        <h2 className="font-[family-name:var(--font-barlow-condensed)] text-3xl font-bold md:text-4xl">Prospects</h2>
         <p className="text-sm text-emerald-800">Fiches, suivis et outils mobiles</p>
       </div>
 
-      <form onSubmit={createProspect} className="card grid gap-3 p-4 md:grid-cols-2">
+      <form onSubmit={createProspect} className="card grid min-w-0 gap-3 p-4 md:grid-cols-2">
         <input name="name" required placeholder="Nom" className="rounded-lg border border-emerald-200 px-3 py-3" />
         <input name="phone" required placeholder="Telephone" className="rounded-lg border border-emerald-200 px-3 py-3" />
         <input name="email" placeholder="Courriel" className="rounded-lg border border-emerald-200 px-3 py-3" />
@@ -89,14 +89,14 @@ export default function ProspectsPage() {
         <label className="inline-flex items-center gap-2"><input type="checkbox" name="needsParking" /> Stationnement requis</label>
         <textarea name="notes" placeholder="Notes" className="rounded-lg border border-emerald-200 px-3 py-3 md:col-span-2" />
         {error ? <p className="text-sm text-red-700 md:col-span-2">{error}</p> : null}
-        <button className="rounded-lg bg-[var(--accent)] px-4 py-3 text-white md:col-span-2">Ajouter le prospect</button>
+        <button className="min-h-11 rounded-lg bg-[var(--accent)] px-4 py-3 text-white md:col-span-2">Ajouter le prospect</button>
       </form>
 
-      <div className="grid gap-3">
+      <div className="grid min-w-0 gap-3">
         {items.map((item) => (
-          <article key={item.id} className="card grid gap-2 p-4">
+          <article key={item.id} className="card grid min-w-0 gap-2 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-lg font-bold">{item.name}</h3>
+              <h3 className="text-lg font-bold break-words">{item.name}</h3>
               <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold">{item.status}</span>
             </div>
             <p className="text-sm">Budget: {item.maxBudget ? `${item.maxBudget}$` : "N/A"} | Chambres: {item.bedroomsNeeded ?? "N/A"}</p>

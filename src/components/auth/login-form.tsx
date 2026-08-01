@@ -45,12 +45,12 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="card grid gap-4 p-6">
-      <h2 className="font-[family-name:var(--font-barlow-condensed)] text-2xl font-bold">Administration - Simon Morin Agent de location</h2>
-      <input name="email" type="email" required placeholder="Courriel" className="rounded-lg border border-emerald-200 bg-white px-4 py-3" />
-      <input name="password" type="password" required placeholder="Mot de passe" className="rounded-lg border border-emerald-200 bg-white px-4 py-3" />
+    <form onSubmit={onSubmit} className="card grid min-w-0 gap-4 p-4 md:p-6">
+      <h2 className="font-[family-name:var(--font-barlow-condensed)] text-xl font-bold leading-tight md:text-2xl">Administration - Simon Morin Agent de location</h2>
+      <input name="email" type="email" required placeholder="Courriel" className="min-h-11 rounded-lg border border-emerald-200 bg-white px-4 py-3" />
+      <input name="password" type="password" required placeholder="Mot de passe" className="min-h-11 rounded-lg border border-emerald-200 bg-white px-4 py-3" />
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
-      <button disabled={loading} className="rounded-lg bg-[var(--accent)] px-5 py-3 text-white">
+      <button disabled={loading} className="min-h-11 rounded-lg bg-[var(--accent)] px-5 py-3 text-white">
         {loading ? "Connexion..." : "Se connecter"}
       </button>
     </form>

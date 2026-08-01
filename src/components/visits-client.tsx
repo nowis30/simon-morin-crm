@@ -251,9 +251,9 @@ export function VisitsClient({ initialView = "TODAY" }: { initialView?: VisitsVi
   ];
 
   return (
-    <section className="grid gap-4">
+    <section className="grid min-w-0 gap-4">
       <div>
-        <h2 className="font-[family-name:var(--font-barlow-condensed)] text-4xl font-bold">Visites</h2>
+        <h2 className="font-[family-name:var(--font-barlow-condensed)] text-3xl font-bold md:text-4xl">Visites</h2>
         <p className="text-sm text-emerald-800">Demandee {"->"} En attente d&apos;approbation {"->"} Confirmee/Refusee (30 min + tampon 30 min)</p>
       </div>
 
@@ -282,7 +282,7 @@ export function VisitsClient({ initialView = "TODAY" }: { initialView?: VisitsVi
         </div>
       ) : null}
 
-      <form onSubmit={findSlots} className="card grid gap-3 p-4 md:grid-cols-2">
+      <form onSubmit={findSlots} className="card grid min-w-0 gap-3 p-4 md:grid-cols-2">
         <select name="prospectId" required value={selectedProspectId} onChange={(e) => setSelectedProspectId(e.target.value)} className="rounded-lg border border-emerald-200 px-3 py-3">
           <option value="">Choisir un prospect</option>
           {prospects.map((prospect) => (
@@ -297,24 +297,24 @@ export function VisitsClient({ initialView = "TODAY" }: { initialView?: VisitsVi
         </select>
         <input name="rangeStart" type="datetime-local" required className="rounded-lg border border-emerald-200 px-3 py-3" />
         <input name="rangeEnd" type="datetime-local" required className="rounded-lg border border-emerald-200 px-3 py-3" />
-        <button className="rounded-lg border border-emerald-300 bg-white px-4 py-3 md:col-span-2" disabled={loadingSlots}>
+        <button className="min-h-11 rounded-lg border border-emerald-300 bg-white px-4 py-3 md:col-span-2" disabled={loadingSlots}>
           {loadingSlots ? "Recherche des plages..." : "Trouver les plages disponibles"}
         </button>
       </form>
 
       {slots.length > 0 ? (
-        <div className="card grid gap-3 p-4">
+        <div className="card grid min-w-0 gap-3 p-4">
           <p className="text-sm font-semibold">Selectionne une plage disponible:</p>
           <div className="grid gap-2">
             {slots.map((slot) => (
-              <label key={slot.startsAt} className="flex items-center gap-2 rounded-lg border border-emerald-200 p-2 text-sm">
+              <label key={slot.startsAt} className="flex items-start gap-2 rounded-lg border border-emerald-200 p-2 text-sm">
                 <input
                   type="radio"
                   name="visit-slot"
                   checked={selectedSlot === slot.startsAt}
                   onChange={() => setSelectedSlot(slot.startsAt)}
                 />
-                <span>
+                <span className="break-words">
                   {new Date(slot.startsAt).toLocaleString("fr-CA")} - {new Date(slot.endsAt).toLocaleTimeString("fr-CA")} ({slot.timeZone})
                 </span>
               </label>
@@ -323,7 +323,7 @@ export function VisitsClient({ initialView = "TODAY" }: { initialView?: VisitsVi
         </div>
       ) : null}
 
-      <form onSubmit={createVisit} className="card grid gap-3 p-4 md:grid-cols-2">
+      <form onSubmit={createVisit} className="card grid min-w-0 gap-3 p-4 md:grid-cols-2">
         <select name="prospectId" required value={selectedProspectId} onChange={(e) => setSelectedProspectId(e.target.value)} className="rounded-lg border border-emerald-200 px-3 py-3">
           <option value="">Prospect de la demande</option>
           {prospects.map((prospect) => (
@@ -338,7 +338,7 @@ export function VisitsClient({ initialView = "TODAY" }: { initialView?: VisitsVi
         </select>
         <input name="notes" placeholder="Notes" className="rounded-lg border border-emerald-200 px-3 py-3" />
         <p className="text-xs text-emerald-900 md:col-span-2">Cette visite doit etre approuvee par Simon avant d&apos;etre confirmee.</p>
-        <button className="rounded-lg bg-[var(--accent)] px-4 py-3 text-white md:col-span-2" disabled={!selectedSlot}>Soumettre la demande</button>
+        <button className="min-h-11 rounded-lg bg-[var(--accent)] px-4 py-3 text-white md:col-span-2" disabled={!selectedSlot}>Soumettre la demande</button>
       </form>
 
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
@@ -357,11 +357,11 @@ export function VisitsClient({ initialView = "TODAY" }: { initialView?: VisitsVi
         ))}
       </div>
 
-      <div className="grid gap-3">
+      <div className="grid min-w-0 gap-3">
         {filteredVisits.map((visit) => (
-          <article key={visit.id} className="card grid gap-2 p-4">
+          <article key={visit.id} className="card grid min-w-0 gap-2 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-lg font-bold">{visit.prospect.name} {"->"} {visit.property.codeIsr}</h3>
+              <h3 className="text-lg font-bold break-words">{visit.prospect.name} {"->"} {visit.property.codeIsr}</h3>
               <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold">{visit.status}</span>
             </div>
             <p className="text-sm">

@@ -24,7 +24,7 @@ export default async function LoginPage() {
 
   return (
     <div className="shell-bg flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md min-w-0">
         <LoginForm />
       </div>
     </div>

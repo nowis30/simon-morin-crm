@@ -102,8 +102,8 @@ export default async function HomePage() {
       </section>
 
       <section className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6 md:py-12">
-        <div className="mb-6 flex items-end justify-between gap-4">
-          <div>
+        <div className="mb-6 flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-end sm:gap-4">
+          <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Selection</p>
             <h2 className="text-2xl font-black text-slate-900 md:text-3xl">Logements disponibles</h2>
           </div>
@@ -192,7 +192,7 @@ export default async function HomePage() {
               loading="lazy"
             />
           </div>
-          <div className="mt-4 space-y-2 md:mt-0">
+          <div className="mt-4 min-w-0 space-y-2 md:mt-0">
             <h2 className="text-lg font-bold text-slate-900">Accompagnement humain et rapide</h2>
             <p className="text-sm text-slate-700">
               Chaque demande est traitee directement par Simon pour offrir une prise de rendez-vous simple et rapide.

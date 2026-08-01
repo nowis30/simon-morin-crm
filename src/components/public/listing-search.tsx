@@ -78,8 +78,8 @@ export function ListingSearch({ total }: Props) {
   const filtersToggleLabel = mobileFiltersOpen ? "Masquer les filtres" : "Plus de filtres";
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <form onSubmit={onSubmit} className="grid gap-3">
+    <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <form onSubmit={onSubmit} className="grid min-w-0 gap-3">
         <div className="grid gap-3 md:grid-cols-[2fr_1fr_1fr_auto] md:items-end">
           <label className="grid gap-1 text-sm font-medium text-slate-800">
             Mot-cle
@@ -120,8 +120,8 @@ export function ListingSearch({ total }: Props) {
           </button>
         </div>
 
-        <div className="grid gap-2 border-t border-slate-100 pt-1 md:grid-cols-[1fr_auto_auto] md:items-center">
-          <p className="text-sm font-medium text-slate-700">{total} logements trouves</p>
+        <div className="grid gap-2 border-t border-slate-100 pt-1 sm:grid-cols-2 md:grid-cols-[1fr_auto_auto] md:items-center">
+          <p className="text-sm font-medium text-slate-700 sm:col-span-2 md:col-span-1">{total} logements trouves</p>
           <button
             type="button"
             onClick={() => setMobileFiltersOpen((value) => !value)}
@@ -134,7 +134,7 @@ export function ListingSearch({ total }: Props) {
           </button>
         </div>
 
-        <div className={`${mobileFiltersOpen ? "grid" : "hidden"} gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid md:grid-cols-3`}>
+        <div className={`${mobileFiltersOpen ? "grid" : "hidden"} min-w-0 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid md:grid-cols-3`}>
           <label className="grid gap-1 text-sm font-medium text-slate-800">
             Ville
             <input

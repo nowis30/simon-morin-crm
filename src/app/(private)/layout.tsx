@@ -53,7 +53,7 @@ export default async function PrivateLayout({ children }: { children: React.Reac
           <Link href="/logements" className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold">
             Voir les logements publics
           </Link>
-          <span className="rounded-md bg-white/80 px-3 py-2 text-sm">{user.email}</span>
+          <span className="max-w-[220px] truncate rounded-md bg-white/80 px-3 py-2 text-sm">{user.email}</span>
           <form action="/api/auth/logout" method="post">
             <button className="rounded-lg bg-white px-4 py-2 text-sm font-semibold">Deconnexion</button>
           </form>

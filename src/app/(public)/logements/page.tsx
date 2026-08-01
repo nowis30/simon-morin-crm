@@ -91,7 +91,7 @@ export default async function PublicListingsPage({
 
   return (
     <main className="min-h-screen bg-transparent px-4 py-5 text-slate-900 md:px-6 md:py-10">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-6xl min-w-0 flex-col gap-6">
         <div className="space-y-3">
           <p className="text-sm uppercase tracking-[0.3em] text-emerald-700">Logements disponibles</p>
           <h1 className="text-2xl font-black md:text-4xl">Decouvrez les unites disponibles</h1>
@@ -107,7 +107,7 @@ export default async function PublicListingsPage({
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {data.items.map((item) => (
-              <article key={item.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <article key={item.id} className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div className="relative aspect-[4/3] bg-slate-100">
                   {item.imageUrl ? (
                     <Image
@@ -127,7 +127,7 @@ export default async function PublicListingsPage({
                 <div className="space-y-3 p-4">
                   <p className="text-2xl font-black text-slate-900">{item.monthlyPrice.toLocaleString("fr-CA")} $ / mois</p>
                   <p className="text-sm font-medium text-slate-700">{item.bedrooms} chambre{item.bedrooms > 1 ? "s" : ""} · {item.propertyType}</p>
-                  <p className="text-sm text-slate-700">{item.city}{item.district ? ` · ${item.district}` : ""}</p>
+                  <p className="break-words text-sm text-slate-700">{item.city}{item.district ? ` · ${item.district}` : ""}</p>
                   <ul className="space-y-1 text-sm text-slate-600">
                     {item.features.slice(0, 2).map((feature) => <li key={feature}>• {feature}</li>)}
                     {item.inclusions ? <li>• Inclus: {item.inclusions}</li> : null}
@@ -143,7 +143,7 @@ export default async function PublicListingsPage({
           </div>
         )}
 
-        <div className="grid gap-2 rounded-xl border border-slate-200 bg-white p-3 text-sm sm:grid-cols-3 sm:items-center">
+        <div className="grid min-w-0 gap-2 rounded-xl border border-slate-200 bg-white p-3 text-sm sm:grid-cols-3 sm:items-center">
           <Link
             href={buildPageUrl(query, Math.max(1, data.page - 1))}
             className={`inline-flex min-h-11 items-center justify-center rounded-lg px-3 ${data.page <= 1 ? "pointer-events-none text-slate-400" : "text-slate-700 hover:bg-slate-100"}`}

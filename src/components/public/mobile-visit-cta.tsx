@@ -51,7 +51,7 @@ export function MobileVisitCta({ priceLabel, targetId }: Props) {
         <button
           type="button"
           onClick={scrollToForm}
-          className="ml-auto inline-flex min-h-11 min-w-[152px] items-center justify-center rounded-full bg-emerald-600 px-4 text-xs font-semibold text-white"
+          className="ml-auto inline-flex min-h-11 items-center justify-center rounded-full bg-emerald-600 px-3.5 text-xs font-semibold text-white"
         >
           Demander une visite
         </button>

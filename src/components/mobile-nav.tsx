@@ -32,7 +32,7 @@ export function MobileNav() {
         Menu
       </button>
       {open ? (
-        <div className="card mt-3 grid gap-2 p-2.5 md:hidden">
+        <div className="card mt-3 grid max-h-[calc(100dvh-9rem)] gap-2 overflow-y-auto p-2.5 md:hidden">
           {links.map((link) => (
             <Link
               key={link.href}

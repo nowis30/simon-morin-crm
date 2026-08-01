@@ -39,7 +39,7 @@ export function PublicBottomNav() {
       aria-label="Navigation mobile"
       className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
     >
-      <ul className="mx-auto grid h-16 w-full max-w-3xl grid-cols-3 px-2">
+      <ul className="mx-auto grid h-16 w-full max-w-3xl grid-cols-3 px-1.5">
         {items.map((item) => {
           const isActive = item.match(pathname);
           return (
@@ -47,7 +47,7 @@ export function PublicBottomNav() {
               <Link
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex h-full w-full flex-col items-center justify-center gap-1 rounded-lg text-xs font-semibold ${
+                className={`flex h-full w-full flex-col items-center justify-center gap-1 rounded-lg px-1 text-[11px] font-semibold ${
                   isActive ? "text-emerald-700" : "text-slate-600"
                 }`}
               >

@@ -22,10 +22,10 @@ export default function PublicContactPage() {
 
   return (
     <section className="mx-auto grid w-full max-w-6xl gap-5 px-4 py-5 md:grid-cols-[1fr_1fr] md:px-6 md:py-10">
-      <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex items-center gap-3">
+      <div className="min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+        <div className="flex min-w-0 items-center gap-3">
           <Image src="/logo.png" alt="Logo Simon Morin" width={742} height={503} className="h-14 w-auto object-contain" priority />
-          <div>
+          <div className="min-w-0">
             <h1 className="text-2xl font-black text-slate-900">Simon Morin</h1>
             <p className="text-sm text-slate-700">Agent de location</p>
           </div>

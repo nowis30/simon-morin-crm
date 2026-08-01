@@ -62,8 +62,8 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
   return (
     <div className="min-h-screen overflow-x-hidden bg-gradient-to-b from-amber-50 via-slate-50 to-emerald-50 text-slate-900">
       <header className="sticky top-0 z-40 border-b border-amber-200/60 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-3 md:px-6 md:py-4">
-          <Link href="/" className="flex items-center gap-2 text-slate-900" aria-label="Accueil Simon Morin">
+        <div className="mx-auto flex w-full max-w-6xl min-w-0 items-center justify-between gap-2 px-4 py-3 md:px-6 md:py-4">
+          <Link href="/" className="flex min-w-0 items-center gap-2 text-slate-900" aria-label="Accueil Simon Morin">
             <Image
               src="/logo.png"
               alt="Simon Morin - Agent de location"
@@ -72,7 +72,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
               className="h-10 w-auto object-contain md:h-12"
               priority
             />
-            <span className="text-sm font-bold tracking-tight sm:text-base">Simon Morin</span>
+            <span className="truncate text-sm font-bold tracking-tight sm:text-base">Simon Morin</span>
           </Link>
 
           <nav className="hidden items-center gap-2 md:flex">
@@ -110,7 +110,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
               Voir les logements
             </Link>
           </div>
-          <div className="space-y-2 md:text-right">
+          <div className="space-y-2 text-left md:text-right">
             <Link href="/privacy" className="block text-sm text-slate-700 hover:text-slate-900">
               Politique de confidentialite
             </Link>

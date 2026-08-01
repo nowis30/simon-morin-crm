@@ -53,7 +53,7 @@ export function PublicMobileMenu({ links, phoneTechnical }: Props) {
         <div className="fixed inset-0 z-50 bg-slate-900/45 md:hidden" onClick={() => setIsOpen(false)}>
           <div
             id="public-mobile-menu-panel"
-            className="absolute inset-x-3 top-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl"
+            className="absolute inset-x-2 top-2 max-h-[calc(100dvh-1rem)] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-xl"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">

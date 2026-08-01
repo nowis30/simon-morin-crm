@@ -26,13 +26,13 @@ export function MobileNav() {
     <>
       <button
         type="button"
-        className="rounded-xl bg-[var(--accent)] px-4 py-3 text-sm font-bold text-white md:hidden"
+        className="w-full rounded-xl bg-[var(--accent)] px-4 py-3 text-sm font-bold text-white md:hidden"
         onClick={() => setOpen((value) => !value)}
       >
         Menu
       </button>
       {open ? (
-        <div className="card mt-3 grid gap-2 p-3 md:hidden">
+        <div className="card mt-3 grid gap-2 p-2.5 md:hidden">
           {links.map((link) => (
             <Link
               key={link.href}

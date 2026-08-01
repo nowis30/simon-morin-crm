@@ -38,13 +38,13 @@ export default async function PrivateLayout({ children }: { children: React.Reac
   }
 
   return (
-    <div className="shell-bg min-h-screen">
-      <header className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-4 md:px-6">
-        <div>
-          <h1 className="font-[family-name:var(--font-barlow-condensed)] text-3xl font-bold tracking-wide">
+    <div className="shell-bg min-h-screen overflow-x-hidden">
+      <header className="mx-auto flex w-full max-w-7xl flex-col items-start gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between md:gap-4 md:px-6">
+        <div className="min-w-0">
+          <h1 className="font-[family-name:var(--font-barlow-condensed)] text-2xl font-bold leading-tight tracking-wide md:text-3xl">
             Simon Morin - Agent de location
           </h1>
-          <p className="text-sm text-emerald-800">Gestion ISR - version initiale</p>
+          <p className="text-xs text-emerald-800 md:text-sm">Gestion ISR - version initiale</p>
         </div>
         <div className="hidden items-center gap-2 md:flex">
           <Link href="/" className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold">
@@ -59,7 +59,7 @@ export default async function PrivateLayout({ children }: { children: React.Reac
           </form>
         </div>
       </header>
-      <div className="mx-auto grid w-full max-w-7xl gap-4 px-4 pb-10 md:grid-cols-[240px_1fr] md:px-6">
+      <div className="mx-auto grid w-full max-w-7xl min-w-0 gap-4 px-4 pb-10 md:grid-cols-[240px_1fr] md:px-6">
         <aside className="card hidden h-fit p-3 md:block">
           <nav className="grid gap-2">
             {links.map((link) => (
@@ -69,7 +69,7 @@ export default async function PrivateLayout({ children }: { children: React.Reac
             ))}
           </nav>
         </aside>
-        <main className="grid gap-4">
+        <main className="grid min-w-0 gap-4 overflow-x-hidden">
           <MobileNav />
           {children}
         </main>

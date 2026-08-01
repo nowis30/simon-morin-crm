@@ -21,6 +21,49 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-nunito), sans-serif;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+html {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+img,
+video,
+canvas,
+svg,
+iframe {
+  max-width: 100%;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+li,
+span,
+a,
+button,
+label {
+  overflow-wrap: anywhere;
+}
+
+input,
+textarea,
+select,
+button {
+  max-width: 100%;
 }
 
 .shell-bg {

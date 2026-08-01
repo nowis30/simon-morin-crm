@@ -107,12 +107,12 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
 
     return (
       <>
-        <main className="min-h-screen bg-transparent px-4 py-5 pb-44 text-slate-900 md:px-6 md:py-10 md:pb-10">
+        <main className="min-h-screen bg-transparent px-4 py-4 pb-44 text-slate-900 md:px-6 md:py-10 md:pb-10">
           <div className="mx-auto flex max-w-6xl flex-col gap-5">
             <Link href="/logements" className="inline-flex min-h-11 items-center text-sm font-semibold text-emerald-700">← Retour aux logements</Link>
             <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
               <section className="space-y-4">
-                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                <div className="-mx-4 overflow-hidden bg-slate-950 md:mx-0 md:rounded-2xl md:border md:border-slate-200 md:bg-white">
                   {item.photoCount > 0 ? (
                     <ListingPhotoGallery title={item.address} unitPhotos={item.unitPhotos} buildingPhotos={item.buildingPhotos} />
                   ) : (
@@ -235,12 +235,12 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
 
   return (
     <>
-      <main className="min-h-screen bg-transparent px-4 py-5 pb-44 text-slate-900 md:px-6 md:py-10 md:pb-10">
+      <main className="min-h-screen bg-transparent px-4 py-4 pb-44 text-slate-900 md:px-6 md:py-10 md:pb-10">
         <div className="mx-auto flex max-w-6xl flex-col gap-5">
           <Link href="/logements" className="inline-flex min-h-11 items-center text-sm font-semibold text-emerald-700">← Retour aux logements</Link>
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
             <section className="space-y-4">
-              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <div className="-mx-4 overflow-hidden bg-slate-950 md:mx-0 md:rounded-2xl md:border md:border-slate-200 md:bg-white">
                 {fallbackItem.photoCount > 0 ? (
                   <ListingPhotoGallery title={fallbackItem.address} unitPhotos={fallbackItem.unitPhotos} />
                 ) : (

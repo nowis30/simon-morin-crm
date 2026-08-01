@@ -108,10 +108,10 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
     return (
       <>
         <main className="min-h-screen bg-transparent px-4 py-4 pb-44 text-slate-900 md:px-6 md:py-10 md:pb-10">
-          <div className="mx-auto flex max-w-6xl flex-col gap-5">
+          <div className="mx-auto flex max-w-6xl flex-col gap-4 md:gap-5">
             <Link href="/logements" className="inline-flex min-h-11 items-center text-sm font-semibold text-emerald-700">← Retour aux logements</Link>
             <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-              <section className="space-y-4">
+              <section className="space-y-3 md:space-y-4">
                 <div className="-mx-4 overflow-hidden bg-slate-950 md:mx-0 md:rounded-2xl md:border md:border-slate-200 md:bg-white">
                   {item.photoCount > 0 ? (
                     <ListingPhotoGallery title={item.address} unitPhotos={item.unitPhotos} buildingPhotos={item.buildingPhotos} />
@@ -120,57 +120,57 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
                   )}
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6">
-                  <p className="text-3xl font-black text-slate-900">{priceLabel}</p>
-                  <h1 className="mt-2 text-2xl font-bold text-slate-900 md:text-3xl">{item.address}</h1>
-                  <p className="mt-1 text-sm text-slate-700">{item.city}{item.district ? ` · ${item.district}` : ""}</p>
+                <div className="rounded-2xl border border-slate-200 bg-white p-3 md:p-6">
+                  <p className="text-2xl font-black text-slate-900 md:text-3xl">{priceLabel}</p>
+                  <h1 className="mt-2 text-xl font-bold text-slate-900 md:text-3xl">{item.address}</h1>
+                  <p className="mt-1 text-xs text-slate-700 md:text-sm">{item.city}{item.district ? ` · ${item.district}` : ""}</p>
 
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2 md:mt-4 md:gap-3">
+                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-2.5 md:p-3">
                       <p className="text-xs text-slate-500">Type</p>
                       <p className="text-base font-semibold text-slate-900">{item.propertyType}</p>
                     </div>
-                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-2.5 md:p-3">
                       <p className="text-xs text-slate-500">Chambres</p>
                       <p className="text-base font-semibold text-slate-900">{item.bedrooms} chambre{item.bedrooms > 1 ? "s" : ""}</p>
                     </div>
-                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 sm:col-span-2">
+                    <div className="rounded-xl border border-slate-100 bg-slate-50 p-2.5 sm:col-span-2 md:p-3">
                       <p className="text-xs text-slate-500">Disponibilite</p>
                       <p className="text-base font-semibold text-slate-900">{item.availabilityLabel}</p>
                     </div>
                   </div>
 
-                  <div className="mt-5 text-sm text-slate-700">
+                  <div className="mt-4 text-sm text-slate-700 md:mt-5">
                     <p className="font-semibold text-slate-900">Caracteristiques essentielles</p>
-                    <ul className="mt-2 space-y-2">
+                    <ul className="mt-2 space-y-1.5 md:space-y-2">
                       {item.features.map((feature: string) => <li key={feature}>• {feature}</li>)}
                     </ul>
                   </div>
 
-                  <p className="mt-5 text-sm leading-6 text-slate-700">{item.description}</p>
+                  <p className="mt-4 text-sm leading-6 text-slate-700 md:mt-5">{item.description}</p>
                 </div>
               </section>
 
-              <aside className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6">
-                <h2 className="text-xl font-semibold text-slate-900">Demander une visite</h2>
-                <p className="mt-2 text-sm text-slate-600">Votre demande sera transmise a Simon pour confirmation manuelle.</p>
+              <aside className="rounded-2xl border border-slate-200 bg-white p-3 md:p-6">
+                <h2 className="text-lg font-semibold text-slate-900 md:text-xl">Demander une visite</h2>
+                <p className="mt-1.5 text-xs text-slate-600 md:mt-2 md:text-sm">Votre demande sera transmise a Simon pour confirmation manuelle.</p>
 
                 {!item.isUnavailable ? (
-                  <a href="#visit-request-form" className="mt-4 inline-flex min-h-[52px] w-full items-center justify-center rounded-full bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-500">
+                  <a href="#visit-request-form" className="mt-3 inline-flex min-h-[48px] w-full items-center justify-center rounded-full bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-500 md:mt-4">
                     Demander une visite
                   </a>
                 ) : null}
 
                 <div id="visit-request-form" className="scroll-mt-24">
                   {item.isUnavailable ? (
-                    <div className="mt-6 space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                    <div className="mt-4 space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 md:mt-6 md:space-y-4 md:p-4">
                       <p>Ce logement n’est plus disponible — voir les logements semblables.</p>
                       <Link href="/logements" className="inline-flex min-h-11 items-center rounded-full bg-emerald-600 px-4 font-medium text-white">Voir les logements</Link>
                     </div>
                   ) : item.linkedPropertyId ? (
                     <VisitRequestForm propertyId={item.linkedPropertyId} rentalUnitId={item.id} />
                   ) : (
-                    <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                    <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 md:mt-6 md:p-4">
                       La demande de visite est temporairement desactivee pour cette unite en attente de validation.
                     </div>
                   )}
@@ -236,10 +236,10 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
   return (
     <>
       <main className="min-h-screen bg-transparent px-4 py-4 pb-44 text-slate-900 md:px-6 md:py-10 md:pb-10">
-        <div className="mx-auto flex max-w-6xl flex-col gap-5">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 md:gap-5">
           <Link href="/logements" className="inline-flex min-h-11 items-center text-sm font-semibold text-emerald-700">← Retour aux logements</Link>
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-            <section className="space-y-4">
+            <section className="space-y-3 md:space-y-4">
               <div className="-mx-4 overflow-hidden bg-slate-950 md:mx-0 md:rounded-2xl md:border md:border-slate-200 md:bg-white">
                 {fallbackItem.photoCount > 0 ? (
                   <ListingPhotoGallery title={fallbackItem.address} unitPhotos={fallbackItem.unitPhotos} />
@@ -247,28 +247,28 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
                   <div className="flex h-80 items-center justify-center text-sm text-slate-500">Aucune photo disponible pour ce logement.</div>
                 )}
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6">
-                <p className="text-3xl font-black text-slate-900">{fallbackPriceLabel}</p>
-                <h1 className="mt-2 text-2xl font-bold text-slate-900 md:text-3xl">{fallbackItem.address}</h1>
-                <p className="mt-1 text-sm text-slate-700">{fallbackItem.city}{fallbackItem.district ? ` · ${fallbackItem.district}` : ""}</p>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border border-slate-100 bg-slate-50 p-3"><p className="text-xs text-slate-500">Type</p><p className="text-base font-semibold text-slate-900">{fallbackItem.propertyType}</p></div>
-                  <div className="rounded-xl border border-slate-100 bg-slate-50 p-3"><p className="text-xs text-slate-500">Chambres</p><p className="text-base font-semibold text-slate-900">{fallbackItem.bedrooms} chambre{fallbackItem.bedrooms > 1 ? "s" : ""}</p></div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-3 md:p-6">
+                <p className="text-2xl font-black text-slate-900 md:text-3xl">{fallbackPriceLabel}</p>
+                <h1 className="mt-2 text-xl font-bold text-slate-900 md:text-3xl">{fallbackItem.address}</h1>
+                <p className="mt-1 text-xs text-slate-700 md:text-sm">{fallbackItem.city}{fallbackItem.district ? ` · ${fallbackItem.district}` : ""}</p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2 md:mt-4 md:gap-3">
+                  <div className="rounded-xl border border-slate-100 bg-slate-50 p-2.5 md:p-3"><p className="text-xs text-slate-500">Type</p><p className="text-base font-semibold text-slate-900">{fallbackItem.propertyType}</p></div>
+                  <div className="rounded-xl border border-slate-100 bg-slate-50 p-2.5 md:p-3"><p className="text-xs text-slate-500">Chambres</p><p className="text-base font-semibold text-slate-900">{fallbackItem.bedrooms} chambre{fallbackItem.bedrooms > 1 ? "s" : ""}</p></div>
                 </div>
-                <div className="mt-5 text-sm text-slate-700">
+                <div className="mt-4 text-sm text-slate-700 md:mt-5">
                   <p className="font-semibold text-slate-900">Caracteristiques essentielles</p>
-                  <ul className="mt-2 space-y-2">
+                  <ul className="mt-2 space-y-1.5 md:space-y-2">
                     {fallbackItem.features.map((feature: string) => <li key={feature}>• {feature}</li>)}
                   </ul>
                 </div>
-                <p className="mt-5 text-sm leading-6 text-slate-700">{fallbackItem.description}</p>
+                <p className="mt-4 text-sm leading-6 text-slate-700 md:mt-5">{fallbackItem.description}</p>
               </div>
             </section>
 
-            <aside className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6">
-              <h2 className="text-xl font-semibold text-slate-900">Demander une visite</h2>
-              <p className="mt-2 text-sm text-slate-600">Votre demande sera transmise a Simon pour confirmation manuelle.</p>
-              <a href="#visit-request-form" className="mt-4 inline-flex min-h-[52px] w-full items-center justify-center rounded-full bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-500">
+            <aside className="rounded-2xl border border-slate-200 bg-white p-3 md:p-6">
+              <h2 className="text-lg font-semibold text-slate-900 md:text-xl">Demander une visite</h2>
+              <p className="mt-1.5 text-xs text-slate-600 md:mt-2 md:text-sm">Votre demande sera transmise a Simon pour confirmation manuelle.</p>
+              <a href="#visit-request-form" className="mt-3 inline-flex min-h-[48px] w-full items-center justify-center rounded-full bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-500 md:mt-4">
                 Demander une visite
               </a>
               <div id="visit-request-form" className="scroll-mt-24">

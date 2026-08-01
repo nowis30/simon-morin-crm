@@ -115,7 +115,7 @@ export function ListingPhotoGallery({ title, unitPhotos, buildingPhotos }: Props
         style={{ touchAction: "pan-y" }}
         data-testid="listing-gallery-frame"
       >
-        <div className="relative h-[58vh] min-h-[320px] max-h-[620px] w-full md:aspect-[4/3] md:h-auto md:max-h-none md:min-h-0">
+        <div className="relative h-[42vh] min-h-[240px] max-h-[420px] w-full md:aspect-[4/3] md:h-auto md:max-h-none md:min-h-0">
           {!activePhotoBroken ? (
             <Image
               src={activePhoto.url}
@@ -149,7 +149,7 @@ export function ListingPhotoGallery({ title, unitPhotos, buildingPhotos }: Props
 
           {!isLoaded && !activePhotoBroken ? <div className="absolute inset-0 animate-pulse bg-slate-800/70" /> : null}
 
-          <div className="absolute left-2 top-2 rounded-full bg-black/55 px-3 py-1 text-xs font-semibold text-white">
+          <div className="absolute left-2 top-2 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-semibold text-white">
             {activeIndex + 1} / {allPhotos.length}
           </div>
 
@@ -157,7 +157,7 @@ export function ListingPhotoGallery({ title, unitPhotos, buildingPhotos }: Props
             <button
               type="button"
               onClick={() => goTo(activeIndex - 1)}
-              className="absolute left-2 top-1/2 inline-flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/45 text-lg text-white"
+              className="absolute left-2 top-1/2 inline-flex min-h-10 min-w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/45 text-base text-white"
               aria-label="Photo precedente"
             >
               ←
@@ -168,18 +168,18 @@ export function ListingPhotoGallery({ title, unitPhotos, buildingPhotos }: Props
             <button
               type="button"
               onClick={() => goTo(activeIndex + 1)}
-              className="absolute right-2 top-1/2 inline-flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/45 text-lg text-white"
+              className="absolute right-2 top-1/2 inline-flex min-h-10 min-w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/45 text-base text-white"
               aria-label="Photo suivante"
             >
               →
             </button>
           ) : null}
 
-          <div className="absolute bottom-2 right-2 flex gap-2">
+          <div className="absolute bottom-2 right-2 flex gap-1.5">
             <button
               type="button"
               onClick={() => setIsFullscreen(true)}
-              className="inline-flex min-h-11 items-center rounded-full border border-white/40 bg-black/60 px-3 text-xs font-semibold text-white"
+              className="inline-flex min-h-10 items-center rounded-full border border-white/40 bg-black/60 px-2.5 text-[11px] font-semibold text-white"
             >
               Agrandir
             </button>
@@ -187,7 +187,7 @@ export function ListingPhotoGallery({ title, unitPhotos, buildingPhotos }: Props
               href={activePhoto.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center rounded-full border border-white/40 bg-black/60 px-3 text-xs font-semibold text-white"
+              className="inline-flex min-h-10 items-center rounded-full border border-white/40 bg-black/60 px-2.5 text-[11px] font-semibold text-white"
             >
               Ouvrir la photo originale
             </a>
@@ -195,7 +195,7 @@ export function ListingPhotoGallery({ title, unitPhotos, buildingPhotos }: Props
         </div>
       </div>
 
-      <div className="flex snap-x gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "thin" }}>
+      <div className="flex snap-x gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "thin", touchAction: "pan-x" }}>
         {allPhotos.map((photo, index) => (
           <button
             key={`${photo.url}-${index}`}

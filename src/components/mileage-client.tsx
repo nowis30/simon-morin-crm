@@ -3,19 +3,40 @@
 import { useEffect, useRef, useState } from "react";
 
 type Trip = { id: string; tripDate: string; destinationAddress: string; purpose: string; businessKm: number; parkingAmount: number; tollAmount: number; distanceSource: string };
+type VisitOption = { id: string; startsAt: string; status: string; address: string; city: string; codeIsr: string; prospectName: string };
 type Summary = { businessKm: number; totalKm: number; businessUsePercent: number; estimatedTotalDeduction: number };
+type YearValues = Record<string, string>;
+
 const currentYear = new Date().getFullYear();
+const expenseFields = [
+  ["openingOdometerKm", "Odomètre début"], ["closingOdometerKm", "Odomètre fin"],
+  ["fuelAmount", "Essence $"], ["insuranceAmount", "Assurances $"], ["registrationAmount", "Immatriculation $"],
+  ["maintenanceAmount", "Entretien $"], ["interestAmount", "Intérêts auto $"], ["leaseAmount", "Location auto $"], ["otherAmount", "Autres dépenses $"],
+] as const;
+
+function toLocalInputDate(value: string) {
+  const date = new Date(value);
+  const offset = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
 
 export function MileageClient() {
   const tripFormRef = useRef<HTMLFormElement>(null);
   const [year, setYear] = useState(currentYear);
   const [trips, setTrips] = useState<Trip[]>([]);
+  const [availableVisits, setAvailableVisits] = useState<VisitOption[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [homeAddress, setHomeAddress] = useState("");
   const [vehicleDescription, setVehicleDescription] = useState("");
   const [roundTrip, setRoundTrip] = useState(true);
+  const [selectedVisitId, setSelectedVisitId] = useState("");
+  const [tripDate, setTripDate] = useState("");
+  const [originAddress, setOriginAddress] = useState("");
+  const [destinationAddress, setDestinationAddress] = useState("");
+  const [purpose, setPurpose] = useState("");
   const [oneWayKm, setOneWayKm] = useState("");
   const [distanceSource, setDistanceSource] = useState("MANUAL");
+  const [yearValues, setYearValues] = useState<YearValues>({});
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
 
@@ -28,24 +49,37 @@ export function MileageClient() {
     const data = await response.json();
     if (!response.ok) return setError(data.error || "Impossible de charger le registre.");
     setTrips(data.trips || []);
+    setAvailableVisits(data.availableVisits || []);
     setSummary(data.summary || null);
     setHomeAddress(data.settings?.homeAddress || "");
     setVehicleDescription(data.settings?.vehicleDescription || "");
     setRoundTrip(data.settings?.defaultRoundTrip ?? true);
+    setOriginAddress((current) => current || data.settings?.homeAddress || "");
+    const nextYearValues: YearValues = {};
+    for (const [name] of expenseFields) nextYearValues[name] = String(data.year?.[name] ?? "");
+    setYearValues(nextYearValues);
   }
 
   useEffect(() => { void load(year); }, [year]);
 
+  function chooseVisit(visitId: string) {
+    setSelectedVisitId(visitId);
+    const visit = availableVisits.find((item) => item.id === visitId);
+    if (!visit) return;
+    setTripDate(toLocalInputDate(visit.startsAt));
+    setDestinationAddress(`${visit.address}, ${visit.city}`);
+    setPurpose(`Visite du logement ${visit.codeIsr} avec ${visit.prospectName}`);
+    setOneWayKm("");
+    setDistanceSource("MANUAL");
+  }
+
   async function calculateDistance() {
-    const form = tripFormRef.current;
-    if (!form) return;
     setError("");
     setNotice("");
-    const values = new FormData(form);
     const response = await fetch("/api/mileage/calculate", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-csrf-token": await csrfToken() },
-      body: JSON.stringify({ originAddress: values.get("originAddress"), destinationAddress: values.get("destinationAddress"), roundTrip }),
+      body: JSON.stringify({ originAddress, destinationAddress, roundTrip }),
     });
     const data = await response.json();
     if (!response.ok) return setError(data.error || "Calcul impossible.");
@@ -63,8 +97,9 @@ export function MileageClient() {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-csrf-token": await csrfToken() },
       body: JSON.stringify({
-        tripDate: new Date(String(form.get("tripDate"))).toISOString(), originAddress: form.get("originAddress"),
-        destinationAddress: form.get("destinationAddress"), purpose: form.get("purpose"), oneWayKm: Number(oneWayKm), roundTrip,
+        visitId: selectedVisitId || null,
+        tripDate: new Date(tripDate).toISOString(), originAddress, destinationAddress, purpose,
+        oneWayKm: Number(oneWayKm), roundTrip,
         parkingAmount: Number(form.get("parkingAmount") || 0), tollAmount: Number(form.get("tollAmount") || 0),
         distanceSource, notes: form.get("notes") || "",
       }),
@@ -72,6 +107,10 @@ export function MileageClient() {
     const data = await response.json();
     if (!response.ok) return setError(data.error || "Enregistrement impossible.");
     setNotice(`Déplacement enregistré : ${data.businessKm} km d'affaires.`);
+    setSelectedVisitId("");
+    setTripDate("");
+    setDestinationAddress("");
+    setPurpose("");
     setOneWayKm("");
     setDistanceSource("MANUAL");
     event.currentTarget.reset();
@@ -81,20 +120,17 @@ export function MileageClient() {
   async function saveSettings(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
-    const form = new FormData(event.currentTarget);
-    const number = (name: string) => Number(form.get(name) || 0);
     const response = await fetch("/api/mileage/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json", "x-csrf-token": await csrfToken() },
       body: JSON.stringify({
         homeAddress, vehicleDescription, defaultRoundTrip: roundTrip, year,
-        openingOdometerKm: number("openingOdometerKm"), closingOdometerKm: number("closingOdometerKm"),
-        fuelAmount: number("fuelAmount"), insuranceAmount: number("insuranceAmount"), registrationAmount: number("registrationAmount"),
-        maintenanceAmount: number("maintenanceAmount"), interestAmount: number("interestAmount"), leaseAmount: number("leaseAmount"), otherAmount: number("otherAmount"),
+        ...Object.fromEntries(expenseFields.map(([name]) => [name, Number(yearValues[name] || 0)])),
       }),
     });
     const data = await response.json();
     if (!response.ok) return setError(data.error || "Sauvegarde impossible.");
+    setOriginAddress(homeAddress);
     setNotice("Paramètres fiscaux enregistrés.");
     await load(year);
   }
@@ -117,10 +153,14 @@ export function MileageClient() {
 
       <form ref={tripFormRef} onSubmit={saveTrip} className="card grid min-w-0 gap-3 p-4 md:grid-cols-2">
         <h3 className="text-xl font-bold md:col-span-2">Ajouter un déplacement</h3>
-        <input name="tripDate" type="datetime-local" required className="rounded-lg border border-emerald-200 px-3 py-3" />
-        <input name="purpose" placeholder="Raison : visite, remise de clés..." required className="rounded-lg border border-emerald-200 px-3 py-3" />
-        <input name="originAddress" defaultValue={homeAddress} placeholder="Adresse de départ" required className="rounded-lg border border-emerald-200 px-3 py-3" />
-        <input name="destinationAddress" placeholder="Adresse du logement" required className="rounded-lg border border-emerald-200 px-3 py-3" />
+        <select value={selectedVisitId} onChange={(event) => chooseVisit(event.target.value)} className="rounded-lg border border-emerald-200 px-3 py-3 md:col-span-2">
+          <option value="">Déplacement manuel ou choisir une visite du CRM</option>
+          {availableVisits.map((visit) => <option key={visit.id} value={visit.id}>{new Date(visit.startsAt).toLocaleString("fr-CA")} — {visit.codeIsr} — {visit.prospectName}</option>)}
+        </select>
+        <input value={tripDate} onChange={(event) => setTripDate(event.target.value)} type="datetime-local" required className="rounded-lg border border-emerald-200 px-3 py-3" />
+        <input value={purpose} onChange={(event) => setPurpose(event.target.value)} placeholder="Raison : visite, remise de clés..." required className="rounded-lg border border-emerald-200 px-3 py-3" />
+        <input value={originAddress} onChange={(event) => setOriginAddress(event.target.value)} placeholder="Adresse de départ" required className="rounded-lg border border-emerald-200 px-3 py-3" />
+        <input value={destinationAddress} onChange={(event) => setDestinationAddress(event.target.value)} placeholder="Adresse du logement" required className="rounded-lg border border-emerald-200 px-3 py-3" />
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={roundTrip} onChange={(event) => setRoundTrip(event.target.checked)} /> Aller-retour</label>
         <input value={oneWayKm} onChange={(event) => { setOneWayKm(event.target.value); setDistanceSource("MANUAL"); }} type="number" min="0.1" step="0.1" placeholder="Distance aller en km" required className="rounded-lg border border-emerald-200 px-3 py-3" />
         <input name="parkingAmount" type="number" min="0" step="0.01" placeholder="Stationnement $" className="rounded-lg border border-emerald-200 px-3 py-3" />
@@ -133,7 +173,7 @@ export function MileageClient() {
         <h3 className="text-xl font-bold md:col-span-2 xl:col-span-4">Véhicule et dépenses annuelles</h3>
         <input value={homeAddress} onChange={(event) => setHomeAddress(event.target.value)} placeholder="Adresse de départ habituelle" required className="rounded-lg border border-emerald-200 px-3 py-3 md:col-span-2" />
         <input value={vehicleDescription} onChange={(event) => setVehicleDescription(event.target.value)} placeholder="Véhicule : marque, modèle, plaque" className="rounded-lg border border-emerald-200 px-3 py-3 md:col-span-2" />
-        {[["openingOdometerKm","Odomètre début"],["closingOdometerKm","Odomètre fin"],["fuelAmount","Essence $"],["insuranceAmount","Assurances $"],["registrationAmount","Immatriculation $"],["maintenanceAmount","Entretien $"],["interestAmount","Intérêts auto $"],["leaseAmount","Location auto $"],["otherAmount","Autres dépenses $"]].map(([name, placeholder]) => <input key={name} name={name} type="number" min="0" step="0.01" placeholder={placeholder} className="rounded-lg border border-emerald-200 px-3 py-3" />)}
+        {expenseFields.map(([name, placeholder]) => <input key={name} value={yearValues[name] || ""} onChange={(event) => setYearValues((current) => ({ ...current, [name]: event.target.value }))} type="number" min="0" step="0.01" placeholder={placeholder} className="rounded-lg border border-emerald-200 px-3 py-3" />)}
         <button className="rounded-lg bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-white xl:col-span-4">Enregistrer les données annuelles</button>
       </form>
 

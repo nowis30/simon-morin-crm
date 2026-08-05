@@ -35,6 +35,20 @@ export async function GET(request: NextRequest) {
       WHERE "userId" = ${auth.user!.id} AND "tripDate" >= ${start} AND "tripDate" < ${end}
       ORDER BY "tripDate" DESC
     `);
+    const availableVisits = await prisma.$queryRaw<Array<Record<string, unknown>>>(Prisma.sql`
+      SELECT
+        v."id", v."startsAt", v."status",
+        p."address", p."city", p."codeIsr",
+        pr."name" AS "prospectName"
+      FROM "Visit" v
+      JOIN "Property" p ON p."id" = v."propertyId"
+      JOIN "Prospect" pr ON pr."id" = v."prospectId"
+      LEFT JOIN "MileageTrip" mt ON mt."visitId" = v."id"
+      WHERE v."startsAt" >= ${start} AND v."startsAt" < ${end}
+        AND v."status" IN ('CONFIRMED', 'COMPLETED', 'NO_SHOW')
+        AND mt."id" IS NULL
+      ORDER BY v."startsAt" DESC
+    `);
     const yearRows = await prisma.$queryRaw<Array<Record<string, unknown>>>(Prisma.sql`
       SELECT * FROM "MileageYear" WHERE "userId" = ${auth.user!.id} AND "year" = ${year} LIMIT 1
     `);
@@ -55,7 +69,13 @@ export async function GET(request: NextRequest) {
       parkingAndTolls,
     });
 
-    return NextResponse.json({ trips, year: yearRows[0] ?? null, settings: settingsRows[0] ?? null, summary: { ...summary, businessKm, parkingAndTolls, vehicleExpenses } });
+    return NextResponse.json({
+      trips,
+      availableVisits,
+      year: yearRows[0] ?? null,
+      settings: settingsRows[0] ?? null,
+      summary: { ...summary, businessKm, parkingAndTolls, vehicleExpenses },
+    });
   } catch (error) {
     console.error("Mileage GET failed", error);
     return safeServerError();
@@ -89,6 +109,9 @@ export async function POST(request: NextRequest) {
     await writeAuditLog({ userId: auth.user!.id, entity: "MileageTrip", entityId: id, action: "CREATE" });
     return NextResponse.json({ id, businessKm }, { status: 201 });
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return NextResponse.json({ error: "Cette visite est déjà inscrite au registre." }, { status: 409 });
+    }
     console.error("Mileage POST failed", error);
     return safeServerError();
   }

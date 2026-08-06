@@ -15,6 +15,7 @@ const links = [
   { href: "/visits/pending", label: "Visites en attente" },
   { href: "/placements", label: "Placements" },
   { href: "/commissions", label: "Commissions" },
+  { href: "/mileage", label: "Kilométrage et impôts" },
   { href: "/settings/calendar", label: "Calendrier" },
 ];
 

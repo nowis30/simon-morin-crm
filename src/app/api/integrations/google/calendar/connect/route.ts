@@ -1,10 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createGoogleCalendarAuthUrl, createOAuthState, hasGoogleCalendarCredentials } from "@/lib/google-calendar";
 import { getGoogleCalendarConfigIssues } from "@/lib/env";
-import { getPublicAppUrl } from "@/lib/public-url";
 import { requireApiUser, safeServerError } from "@/lib/route-guards";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const auth = await requireApiUser();
     if (auth.response) {
@@ -16,7 +15,7 @@ export async function GET() {
     }
 
     const state = createOAuthState(auth.user!.id);
-    const url = createGoogleCalendarAuthUrl(state, getPublicAppUrl());
+    const url = createGoogleCalendarAuthUrl(state, request.url);
     const response = NextResponse.redirect(url);
     response.cookies.set({
       name: "google_oauth_state",

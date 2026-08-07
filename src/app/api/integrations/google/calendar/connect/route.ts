@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     }
 
     const state = createOAuthState(auth.user!.id);
-    const url = createGoogleCalendarAuthUrl(state, request.url);
+    const url = createGoogleCalendarAuthUrl(state);
     const response = NextResponse.redirect(url);
     response.cookies.set({
       name: "google_oauth_state",

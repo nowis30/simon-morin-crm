@@ -7,7 +7,7 @@ import {
   hasGoogleCalendarCredentials,
   upsertGoogleConnection,
 } from "@/lib/google-calendar";
-import { getGoogleCalendarConfigIssues } from "@/lib/env";
+import { env, getGoogleCalendarConfigIssues } from "@/lib/env";
 import { requireApiUser, safeServerError } from "@/lib/route-guards";
 
 export async function GET(request: NextRequest) {
@@ -15,7 +15,9 @@ export async function GET(request: NextRequest) {
     const auth = await requireApiUser();
     if (auth.response) {
       console.warn("[google-calendar-callback] unauthenticated callback", { path: request.nextUrl.pathname });
-      return NextResponse.redirect(new URL("/login", request.url));
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("reason", "google_calendar_session");
+      return NextResponse.redirect(loginUrl);
     }
 
     console.log("[google-calendar-callback] processing callback", { userId: auth.user?.id, hasCode: Boolean(request.nextUrl.searchParams.get("code")) });
@@ -51,8 +53,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    const callbackUrl = new URL("/api/integrations/google/calendar/callback", request.url).toString();
-    const tokenData = await exchangeCodeForGoogleTokens(code, callbackUrl);
+    const tokenData = await exchangeCodeForGoogleTokens(code);
     const refreshToken = tokenData.refresh_token;
 
     if (!refreshToken) {
@@ -88,7 +89,10 @@ export async function GET(request: NextRequest) {
     const message = error instanceof Error ? error.message : "Erreur inconnue";
     const url = new URL("/settings/calendar", request.url);
     url.searchParams.set("error", "oauth_exchange_failed");
-    url.searchParams.set("details", message);
+    if (message) {
+      const safeDetails = message.replace(/(client_secret|access_token|refresh_token|token|code|secret)=([^&\s,;]+)/gi, "$1=[masqué]");
+      url.searchParams.set("details", safeDetails);
+    }
     return NextResponse.redirect(url);
   }
 }

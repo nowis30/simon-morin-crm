@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { getDefaultWeekSchedule, type WeekSchedule } from "@/lib/visit-availability";
 
 type CalendarStatus = {
@@ -42,21 +43,25 @@ const DAY_LABELS: Array<{ key: keyof WeekSchedule; label: string }> = [
 ];
 
 export function CalendarSettingsClient() {
+  const searchParams = useSearchParams();
   const [status, setStatus] = useState<CalendarStatus | null>(null);
   const [settings, setSettings] = useState<AvailabilitySettings | null>(null);
   const [blockedPeriods, setBlockedPeriods] = useState<BlockedPeriod[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [diagnostic, setDiagnostic] = useState<{ authenticated: boolean; configured: boolean; redirectUriConfigured: boolean; redirectUriHost: string | null; calendarId: string; connected: boolean; googleAccountEmail: string | null; configIssues: string[] } | null>(null);
 
   async function load() {
-    const [statusData, settingsData, blockedData] = await Promise.all([
+    const [statusData, settingsData, blockedData, diagnosticData] = await Promise.all([
       fetch("/api/integrations/google/calendar/status").then((r) => r.json()),
       fetch("/api/visits/settings").then((r) => r.json()),
       fetch("/api/visits/blocked-periods").then((r) => r.json()),
+      fetch("/api/integrations/google/calendar/diagnostic").then((r) => r.json()),
     ]);
 
     setStatus(statusData);
+    setDiagnostic(diagnosticData);
     setSettings({
       ...(settingsData.item ?? {}),
       weekSchedule: (settingsData.item?.weekSchedule ?? getDefaultWeekSchedule()) as WeekSchedule,
@@ -67,6 +72,30 @@ export function CalendarSettingsClient() {
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    const queryError = searchParams.get("error");
+    const queryDetails = searchParams.get("details");
+    const querySuccess = searchParams.get("success");
+
+    if (querySuccess === "connected") {
+      setNotice("Connexion Google Agenda reussie.");
+    }
+
+    if (queryError) {
+      const userMessage = {
+        redirect_uri_mismatch: "L’URI de redirection Google ne correspond pas à la configuration attendue.",
+        access_denied: "L’accès Google a été refusé par l’utilisateur.",
+        invalid_state: "La validation de sécurité OAuth a échoué. Veuillez recommencer la connexion.",
+        missing_oauth_payload: "Les informations de retour Google sont incomplètes.",
+        missing_refresh_token: "Google n’a pas fourni de refresh token. Veuillez réautoriser l’application.",
+        oauth_exchange_failed: "L’échange du code OAuth a échoué.",
+        config: "La configuration Google Agenda est incomplète.",
+      }[queryError] || "La connexion Google Agenda a échoué.";
+
+      setError(`${userMessage}${queryDetails ? ` (${queryDetails})` : ""}`);
+    }
+  }, [searchParams]);
 
   async function disconnect() {
     setError(null);
@@ -181,6 +210,17 @@ export function CalendarSettingsClient() {
           </div>
         ) : null}
         {status.needsReconnect ? <p className="font-semibold text-red-700">Reconnexion Google requise.</p> : null}
+        {diagnostic ? (
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+            <p className="font-semibold">Diagnostic Google Agenda</p>
+            <p>Session CRM: {diagnostic.authenticated ? "OK" : "Non authentifie"}</p>
+            <p>Configuration Google: {diagnostic.configured ? "OK" : "Incomplète"}</p>
+            <p>URI OAuth: {diagnostic.redirectUriConfigured ? "configurée" : "manquante"}</p>
+            <p>Connexion Google: {diagnostic.connected ? "Connectée" : "Non connectée"}</p>
+            {diagnostic.configIssues?.length ? <p>Variables manquantes: {diagnostic.configIssues.join(", ")}</p> : null}
+            {diagnostic.redirectUriHost ? <p>Hôte OAuth: {diagnostic.redirectUriHost}</p> : null}
+          </div>
+        ) : null}
         <div className="flex flex-wrap gap-2">
           <a href="/api/integrations/google/calendar/connect" className="rounded-lg bg-[var(--accent)] px-4 py-2 text-white">Connecter Google Agenda</a>
           <a href="/api/integrations/google/calendar/connect" className="rounded-lg border border-emerald-300 px-4 py-2">Reconnecter</a>

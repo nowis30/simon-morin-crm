@@ -26,14 +26,12 @@ export function createOAuthState(userId: string) {
   return `${userId}:${nonce}`;
 }
 
-export function createGoogleCalendarAuthUrl(state: string, baseUrl?: string) {
+export function createGoogleCalendarAuthUrl(state: string) {
   if (!hasGoogleCalendarCredentials()) {
     throw new Error("Configuration Google Agenda incomplete");
   }
 
-  const callbackUrl = baseUrl
-    ? new URL("/api/integrations/google/calendar/callback", baseUrl).toString()
-    : env.GOOGLE_REDIRECT_URI!;
+  const callbackUrl = env.GOOGLE_REDIRECT_URI!;
 
   const params = new URLSearchParams({
     client_id: env.GOOGLE_CLIENT_ID!,
@@ -57,6 +55,16 @@ type TokenResponse = {
   token_type: string;
 };
 
+export function sanitizeGoogleOAuthDetails(details?: string | null) {
+  if (!details) return null;
+
+  const sanitized = details
+    .replace(/(client_secret|access_token|refresh_token|token|code|secret)=([^&\s,;]+)/gi, "$1=[masqué]")
+    .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, "Bearer [masqué]");
+
+  return sanitized.trim() || null;
+}
+
 async function exchangeToken(payload: Record<string, string>) {
   const response = await fetch(GOOGLE_TOKEN_ENDPOINT, {
     method: "POST",
@@ -66,18 +74,18 @@ async function exchangeToken(payload: Record<string, string>) {
 
   const data = (await response.json()) as TokenResponse & { error?: string; error_description?: string };
   if (!response.ok || !data.access_token) {
-    const details = data.error_description || data.error || "Erreur inconnue";
-    throw new Error(`Echec OAuth Google: ${details}`);
+    const details = sanitizeGoogleOAuthDetails(data.error_description || data.error || "Erreur inconnue");
+    throw new Error(`Echec OAuth Google${details ? `: ${details}` : ""}`);
   }
   return data;
 }
 
-export async function exchangeCodeForGoogleTokens(code: string, redirectUri?: string) {
+export async function exchangeCodeForGoogleTokens(code: string) {
   return exchangeToken({
     code,
     client_id: env.GOOGLE_CLIENT_ID!,
     client_secret: env.GOOGLE_CLIENT_SECRET!,
-    redirect_uri: redirectUri || env.GOOGLE_REDIRECT_URI!,
+    redirect_uri: env.GOOGLE_REDIRECT_URI!,
     grant_type: "authorization_code",
   });
 }

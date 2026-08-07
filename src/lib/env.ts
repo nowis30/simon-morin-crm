@@ -1,26 +1,36 @@
 import { z } from "zod";
 
+const optionalString = z.preprocess(
+  (value) => (typeof value === "string" && value.trim().length === 0 ? undefined : value),
+  z.string().optional(),
+);
+
+const optionalUrl = z.preprocess(
+  (value) => (typeof value === "string" && value.trim().length === 0 ? undefined : value),
+  z.string().url().optional(),
+);
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
+  NEXT_PUBLIC_APP_URL: optionalUrl,
   DATABASE_URL: z.string().min(1, "DATABASE_URL est requis"),
   SESSION_SECRET: z.string().min(32, "SESSION_SECRET doit contenir au moins 32 caracteres"),
-  GOOGLE_CLIENT_ID: z.string().optional(),
-  GOOGLE_CLIENT_SECRET: z.string().optional(),
-  GOOGLE_REDIRECT_URI: z.string().optional(),
-  GOOGLE_CALENDAR_ID: z.string().optional(),
-  GOOGLE_TOKEN_ENCRYPTION_KEY: z.string().optional(),
-  GOOGLE_MAPS_API_KEY: z.string().optional(),
-  APP_TIME_ZONE: z.string().optional(),
-  PUBLIC_CONTACT_PHONE: z.string().optional(),
-  PUBLIC_CONTACT_EMAIL: z.string().optional(),
-  PUBLIC_MESSENGER_URL: z.string().url().optional().or(z.literal("")),
-  META_APP_ID: z.string().optional(),
-  META_APP_SECRET: z.string().optional(),
-  META_REDIRECT_URI: z.string().optional(),
-  META_PAGE_ID: z.string().optional(),
-  META_PAGE_ACCESS_TOKEN: z.string().optional(),
-  META_PAGE_URL: z.string().url().optional(),
+  GOOGLE_CLIENT_ID: optionalString,
+  GOOGLE_CLIENT_SECRET: optionalString,
+  GOOGLE_REDIRECT_URI: optionalString,
+  GOOGLE_CALENDAR_ID: optionalString,
+  GOOGLE_TOKEN_ENCRYPTION_KEY: optionalString,
+  GOOGLE_MAPS_API_KEY: optionalString,
+  APP_TIME_ZONE: optionalString,
+  PUBLIC_CONTACT_PHONE: optionalString,
+  PUBLIC_CONTACT_EMAIL: optionalString,
+  PUBLIC_MESSENGER_URL: optionalUrl,
+  META_APP_ID: optionalString,
+  META_APP_SECRET: optionalString,
+  META_REDIRECT_URI: optionalString,
+  META_PAGE_ID: optionalString,
+  META_PAGE_ACCESS_TOKEN: optionalString,
+  META_PAGE_URL: optionalUrl,
   META_GRAPH_API_VERSION: z.preprocess(
     (value) => (typeof value === "string" && value.trim().length === 0 ? undefined : value),
     z.string().default("v20.0"),

@@ -64,9 +64,10 @@ async function exchangeToken(payload: Record<string, string>) {
     body: new URLSearchParams(payload),
   });
 
-  const data = (await response.json()) as TokenResponse & { error?: string };
+  const data = (await response.json()) as TokenResponse & { error?: string; error_description?: string };
   if (!response.ok || !data.access_token) {
-    throw new Error("Echec OAuth Google");
+    const details = data.error_description || data.error || "Erreur inconnue";
+    throw new Error(`Echec OAuth Google: ${details}`);
   }
   return data;
 }

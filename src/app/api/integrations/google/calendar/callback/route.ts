@@ -81,7 +81,11 @@ export async function GET(request: NextRequest) {
       maxAge: 0,
     });
     return response;
-  } catch {
-    return safeServerError();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Erreur inconnue";
+    const url = new URL("/settings/calendar", request.url);
+    url.searchParams.set("error", "oauth_exchange_failed");
+    url.searchParams.set("details", message);
+    return NextResponse.redirect(url);
   }
 }

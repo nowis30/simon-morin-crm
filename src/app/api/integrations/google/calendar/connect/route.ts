@@ -7,8 +7,11 @@ export async function GET(request: NextRequest) {
   try {
     const auth = await requireApiUser();
     if (auth.response) {
+      console.warn("[google-calendar-connect] unauthenticated request", { path: "/api/integrations/google/calendar/connect" });
       return auth.response;
     }
+
+    console.log("[google-calendar-connect] starting OAuth flow", { userId: auth.user?.id });
 
     if (!hasGoogleCalendarCredentials()) {
       return NextResponse.json({ error: "Configuration Google Agenda incomplete", details: getGoogleCalendarConfigIssues() }, { status: 400 });

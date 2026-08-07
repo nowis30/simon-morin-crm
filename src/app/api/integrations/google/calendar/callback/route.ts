@@ -14,8 +14,11 @@ export async function GET(request: NextRequest) {
   try {
     const auth = await requireApiUser();
     if (auth.response) {
+      console.warn("[google-calendar-callback] unauthenticated callback", { path: request.nextUrl.pathname });
       return NextResponse.redirect(new URL("/login", request.url));
     }
+
+    console.log("[google-calendar-callback] processing callback", { userId: auth.user?.id, hasCode: Boolean(request.nextUrl.searchParams.get("code")) });
 
     if (!hasGoogleCalendarCredentials()) {
       const url = new URL("/settings/calendar", request.url);

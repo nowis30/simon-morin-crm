@@ -71,12 +71,12 @@ async function exchangeToken(payload: Record<string, string>) {
   return data;
 }
 
-export async function exchangeCodeForGoogleTokens(code: string) {
+export async function exchangeCodeForGoogleTokens(code: string, redirectUri?: string) {
   return exchangeToken({
     code,
     client_id: env.GOOGLE_CLIENT_ID!,
     client_secret: env.GOOGLE_CLIENT_SECRET!,
-    redirect_uri: env.GOOGLE_REDIRECT_URI!,
+    redirect_uri: redirectUri || env.GOOGLE_REDIRECT_URI!,
     grant_type: "authorization_code",
   });
 }

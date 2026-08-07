@@ -48,7 +48,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    const tokenData = await exchangeCodeForGoogleTokens(code);
+    const callbackUrl = new URL("/api/integrations/google/calendar/callback", request.url).toString();
+    const tokenData = await exchangeCodeForGoogleTokens(code, callbackUrl);
     const refreshToken = tokenData.refresh_token;
 
     if (!refreshToken) {

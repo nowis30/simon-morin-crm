@@ -16,4 +16,20 @@ describe("google calendar redirect resolution", () => {
 
     expect(url).toContain("redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fintegrations%2Fgoogle%2Fcalendar%2Fcallback");
   });
+
+  it("uses the same callback URL when exchanging the OAuth code", async () => {
+    const fetchSpy = vi.fn(async (_url: string, init?: RequestInit) => ({
+      ok: true,
+      json: async () => ({ access_token: "access-token", expires_in: 3600, token_type: "Bearer", scope: "scope-a" }),
+    }));
+
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const { exchangeCodeForGoogleTokens } = await import("@/lib/google-calendar");
+    await exchangeCodeForGoogleTokens("auth-code", "http://localhost:3000/api/integrations/google/calendar/callback");
+
+    expect(fetchSpy).toHaveBeenCalled();
+    const requestInit = fetchSpy.mock.calls[0]?.[1];
+    expect(String(requestInit?.body)).toContain("redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fintegrations%2Fgoogle%2Fcalendar%2Fcallback");
+  });
 });

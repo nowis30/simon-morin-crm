@@ -148,13 +148,18 @@ export async function POST(request: NextRequest) {
 
     const now = new Date();
     const year = now.getFullYear();
-    const yearStart = new Date(year, 0, 1);
+    const prefix = `SM-${year}-`;
     const existingInvoices = await prisma.commission.findMany({
-      where: { invoiceNumber: { not: null }, billedAt: { gte: yearStart } },
+      where: { invoiceNumber: { startsWith: prefix } },
       select: { invoiceNumber: true },
       distinct: ["invoiceNumber"],
     });
-    const invoiceNumber = `SM-${year}-${String(existingInvoices.length + 1).padStart(3, "0")}`;
+    const lastSequence = existingInvoices.reduce((max, item) => {
+      const suffix = item.invoiceNumber?.slice(prefix.length) ?? "";
+      const sequence = Number.parseInt(suffix, 10);
+      return Number.isFinite(sequence) ? Math.max(max, sequence) : max;
+    }, 0);
+    const invoiceNumber = `${prefix}${String(lastSequence + 1).padStart(3, "0")}`;
     const amountByCommission = new Map(parsed.data.lines.map((line) => [line.commissionId, line.amount]));
 
     await prisma.$transaction(

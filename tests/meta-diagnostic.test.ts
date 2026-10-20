@@ -168,4 +168,39 @@ describe("Meta diagnostic", () => {
 
     expect(result.graphApiVersion).toBe("v20.0");
   });
+
+  it("does not reuse saved permissions revoked since connection", async () => {
+    findMetaConnection.mockResolvedValue({
+      id: "conn-1",
+      pageAccessTokenEncrypted: "encrypted-page",
+      userAccessTokenEncrypted: null,
+      scopes: ["pages_show_list", "pages_read_engagement", "pages_manage_posts"],
+    });
+    decryptMetaToken.mockReturnValue("page-token");
+    vi.spyOn(global, "fetch")
+      .mockResolvedValueOnce(jsonResponse({ id: "page-1", name: "Simon Page" }))
+      .mockResolvedValueOnce(jsonResponse({ data: { is_valid: true, scopes: ["pages_read_engagement"] } }));
+
+    const result = await (await import("@/lib/meta-facebook")).getMetaDiagnostic("user-1");
+    expect(result.grantedScopes).toEqual(["pages_read_engagement"]);
+    expect(result.missingScopes).toContain("pages_manage_posts");
+  });
+
+  it("does not report a valid token when live token inspection fails", async () => {
+    findMetaConnection.mockResolvedValue({
+      id: "conn-1",
+      pageAccessTokenEncrypted: "encrypted-page",
+      userAccessTokenEncrypted: null,
+      scopes: ["pages_show_list", "pages_read_engagement", "pages_manage_posts"],
+    });
+    decryptMetaToken.mockReturnValue("page-token");
+    vi.spyOn(global, "fetch")
+      .mockResolvedValueOnce(jsonResponse({ id: "page-1", name: "Simon Page" }))
+      .mockResolvedValueOnce(jsonResponse({ error: { message: "unavailable" } }, false, 503));
+
+    const result = await (await import("@/lib/meta-facebook")).getMetaDiagnostic("user-1");
+    expect(result.tokenValid).toBe(false);
+    expect(result.grantedScopes).toEqual([]);
+    expect(result.issues.some((issue) => issue.includes("Impossible de verifier"))).toBe(true);
+  });
 });

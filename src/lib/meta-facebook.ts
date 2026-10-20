@@ -320,7 +320,7 @@ export function createMetaOAuthUrl(state: string) {
 }
 
 async function fetchMetaJson<T>(url: string, init?: RequestInit) {
-  const response = await fetch(url, init);
+  const response = await fetch(url, { ...init, signal: AbortSignal.timeout(10_000), cache: "no-store" });
   const payload = (await response.json().catch(() => ({}))) as T & MetaResponsePayload;
   return { response, payload };
 }
@@ -619,7 +619,8 @@ export async function getMetaDiagnostic(userId: string): Promise<MetaDiagnosticR
   let tokenExpiresAt: string | null = null;
   let pageName: string | null = connection?.pageName ?? null;
   let pageIdMatches = false;
-  let grantedScopes: string[] = Array.from(new Set(connection?.scopes ?? []));
+  // Saved scopes can outlive a revoked permission; only trust live inspection.
+  let grantedScopes: string[] = [];
 
   if (!connection) {
     issues.push("Aucune connexion MetaConnection en base de donnees.");
@@ -674,8 +675,9 @@ export async function getMetaDiagnostic(userId: string): Promise<MetaDiagnosticR
       } else {
         pageIdMatches = true;
         pageName = page.name || pageName;
-        grantedScopes = Array.from(new Set([...(page.perms ?? []), ...grantedScopes]));
       }
+    } else {
+      issues.push("Impossible de verifier l'acces du compte a la Page Facebook.");
     }
   }
 
@@ -697,12 +699,13 @@ export async function getMetaDiagnostic(userId: string): Promise<MetaDiagnosticR
     if (debugResult.response.ok && debugResult.payload.data) {
       const debugData = debugResult.payload.data;
       tokenValid = Boolean(debugData.is_valid) && tokenValid;
-      grantedScopes = Array.from(new Set([...(debugData.scopes ?? []), ...grantedScopes]));
+      grantedScopes = debugData.is_valid ? Array.from(new Set(debugData.scopes ?? [])) : [];
 
       if (typeof debugData.expires_at === "number" && debugData.expires_at > 0) {
         const expiry = new Date(debugData.expires_at * 1000);
         tokenExpiresAt = expiry.toISOString();
         if (expiry.getTime() < Date.now()) {
+          tokenValid = false;
           tokenRevoked = true;
           issues.push("Le jeton de Page Facebook est expire.");
         }
@@ -712,6 +715,9 @@ export async function getMetaDiagnostic(userId: string): Promise<MetaDiagnosticR
         tokenRevoked = true;
         issues.push("Le jeton de Page Facebook est invalide ou revoque.");
       }
+    } else {
+      tokenValid = false;
+      issues.push("Impossible de verifier le jeton et les permissions actuelles aupres de Meta.");
     }
   }
 

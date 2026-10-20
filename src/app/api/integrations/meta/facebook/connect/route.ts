@@ -4,14 +4,16 @@ import { connectMetaFromEnvToken, createMetaOAuthUrl, createMetaState } from "@/
 import { getPublicAppUrl } from "@/lib/public-url";
 import { requireApiUser, safeServerError } from "@/lib/route-guards";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const auth = await requireApiUser();
     if (auth.response) {
       return auth.response;
     }
 
-    if (env.META_PAGE_ACCESS_TOKEN) {
+    // Explicit reconnection must not silently reimport an expired environment token.
+    const reconnectWithOAuth = new URL(request.url).searchParams.get("oauth") === "1";
+    if (env.META_PAGE_ACCESS_TOKEN && !reconnectWithOAuth) {
       await connectMetaFromEnvToken(auth.user!.id);
       return NextResponse.redirect(new URL("/marketing/approval?meta=connected", getPublicAppUrl()));
     }

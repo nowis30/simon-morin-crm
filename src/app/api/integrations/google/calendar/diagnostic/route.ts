@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { env, getGoogleCalendarConfigIssues, googleCalendarId } from "@/lib/env";
-import { getGoogleConnectionStatus, hasGoogleCalendarCredentials } from "@/lib/google-calendar";
+import { env } from "@/lib/env";
+import { getGoogleCalendarDiagnostic } from "@/lib/google-calendar";
 import { requireApiUser, safeServerError } from "@/lib/route-guards";
 
 export async function GET() {
@@ -10,19 +10,14 @@ export async function GET() {
       return auth.response;
     }
 
-    const status = await getGoogleConnectionStatus(auth.user!.id);
-    const configured = hasGoogleCalendarCredentials();
+    const diagnostic = await getGoogleCalendarDiagnostic(auth.user!.id);
     const redirectUriConfigured = Boolean(env.GOOGLE_REDIRECT_URI);
 
     return NextResponse.json({
       authenticated: true,
-      configured,
+      ...diagnostic,
       redirectUriConfigured,
       redirectUriHost: env.GOOGLE_REDIRECT_URI ? new URL(env.GOOGLE_REDIRECT_URI).host : null,
-      calendarId: googleCalendarId,
-      connected: status.connected,
-      googleAccountEmail: status.googleAccountEmail,
-      configIssues: configured ? [] : getGoogleCalendarConfigIssues(),
     });
   } catch {
     return safeServerError();

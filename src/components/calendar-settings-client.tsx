@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { getDefaultWeekSchedule, type WeekSchedule } from "@/lib/visit-availability";
+import { getDefaultWeekSchedule, type WeekSchedule } from "@/lib/visit-schedule";
 
 type CalendarStatus = {
   configured: boolean;
@@ -13,6 +13,15 @@ type CalendarStatus = {
   needsReconnect: boolean;
   timeZone: string;
   configIssues?: string[];
+};
+
+type CalendarDiagnostic = CalendarStatus & {
+  authenticated: boolean;
+  redirectUriConfigured: boolean;
+  redirectUriHost: string | null;
+  apiVerified: boolean;
+  calendarAccessRole: string | null;
+  issues: string[];
 };
 
 type AvailabilitySettings = {
@@ -50,7 +59,7 @@ export function CalendarSettingsClient() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [diagnostic, setDiagnostic] = useState<{ authenticated: boolean; configured: boolean; redirectUriConfigured: boolean; redirectUriHost: string | null; calendarId: string; connected: boolean; googleAccountEmail: string | null; configIssues: string[] } | null>(null);
+  const [diagnostic, setDiagnostic] = useState<CalendarDiagnostic | null>(null);
 
   async function load() {
     const [statusData, settingsData, blockedData, diagnosticData] = await Promise.all([
@@ -216,7 +225,10 @@ export function CalendarSettingsClient() {
             <p>Session CRM: {diagnostic.authenticated ? "OK" : "Non authentifie"}</p>
             <p>Configuration Google: {diagnostic.configured ? "OK" : "Incomplète"}</p>
             <p>URI OAuth: {diagnostic.redirectUriConfigured ? "configurée" : "manquante"}</p>
-            <p>Connexion Google: {diagnostic.connected ? "Connectée" : "Non connectée"}</p>
+            <p>Connexion Google enregistrée: {diagnostic.connected ? "Oui" : "Non"}</p>
+            <p>API Google vérifiée en lecture: {diagnostic.apiVerified ? "OK" : "Non vérifiée"}</p>
+            {diagnostic.calendarAccessRole ? <p>Accès au calendrier: {diagnostic.calendarAccessRole}</p> : null}
+            {diagnostic.issues?.map((issue) => <p key={issue} className="text-amber-900">{issue}</p>)}
             {diagnostic.configIssues?.length ? <p>Variables manquantes: {diagnostic.configIssues.join(", ")}</p> : null}
             {diagnostic.redirectUriHost ? <p>Hôte OAuth: {diagnostic.redirectUriHost}</p> : null}
           </div>

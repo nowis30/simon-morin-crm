@@ -35,6 +35,7 @@ jobs:
           node-version-file: .node-version
           cache: npm
       - run: npm ci
+      - run: npm audit --audit-level=high
       - run: npx prisma generate
       - run: npx prisma migrate deploy
       - run: npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --exit-code

@@ -1,0 +1,10 @@
+{
+  "name": "@simon-morin-crm/next-eslint-glob",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minimal globSync compatibility adapter for the Next ESLint plugin",
+  "main": "index.mjs",
+  "dependencies": {
+    "tinyglobby": "0.2.17"
+  }
+}

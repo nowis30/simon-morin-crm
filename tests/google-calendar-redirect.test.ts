@@ -68,7 +68,7 @@ describe("google calendar redirect resolution", () => {
       const actual = await vi.importActual<typeof import("@/lib/google-calendar")>("@/lib/google-calendar");
       return {
         ...actual,
-        getGoogleConnectionStatus: vi.fn(async () => ({ connected: false, googleAccountEmail: null })),
+        getGoogleCalendarDiagnostic: vi.fn(async () => ({ connected: false, googleAccountEmail: null, apiVerified: false })),
       };
     });
     const { GET } = await import("@/app/api/integrations/google/calendar/diagnostic/route");

@@ -79,7 +79,7 @@ export function MetaSettingsClient() {
       const response = await fetch("/api/integrations/meta/facebook/diagnostic");
       const json = await response.json();
       if (!response.ok) throw new Error(json.error || "Diagnostic Meta impossible");
-      setMeta(json);
+      setMeta((current) => ({ ...current, ...json }));
       setMessage("Diagnostic Facebook termine.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inattendue");
@@ -98,7 +98,7 @@ export function MetaSettingsClient() {
       <div className="card grid gap-3 p-4 text-sm">
         <div className="flex flex-wrap gap-2">
           <button className="rounded-lg bg-[var(--accent)] px-4 py-2 text-white" onClick={() => window.location.assign("/api/integrations/meta/connect")}>Connecter Facebook</button>
-          <button className="rounded-lg border border-emerald-300 px-4 py-2" onClick={() => window.location.assign("/api/integrations/meta/facebook/connect")}>Reconnecter la Page Facebook</button>
+          <button className="rounded-lg border border-emerald-300 px-4 py-2" onClick={() => window.location.assign("/api/integrations/meta/facebook/connect?oauth=1")}>Reconnecter la Page Facebook</button>
           <button className="rounded-lg border border-red-300 px-4 py-2" onClick={() => runAction("/api/integrations/meta/facebook/disconnect", "POST")}>Déconnecter</button>
           <button className="rounded-lg border border-emerald-300 px-4 py-2" onClick={testConnection}>Tester la connexion</button>
         </div>

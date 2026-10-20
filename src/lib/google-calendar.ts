@@ -68,6 +68,8 @@ export function sanitizeGoogleOAuthDetails(details?: string | null) {
 async function exchangeToken(payload: Record<string, string>) {
   const response = await fetch(GOOGLE_TOKEN_ENDPOINT, {
     method: "POST",
+    signal: AbortSignal.timeout(10_000),
+    cache: "no-store",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams(payload),
   });
@@ -101,6 +103,8 @@ export async function refreshGoogleAccessToken(refreshToken: string) {
 
 export async function fetchGoogleAccountEmail(accessToken: string) {
   const response = await fetch(GOOGLE_USERINFO_ENDPOINT, {
+    signal: AbortSignal.timeout(10_000),
+    cache: "no-store",
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 
@@ -196,6 +200,61 @@ export async function disconnectGoogleCalendar(userId: string) {
   await prisma.googleCalendarConnection.deleteMany({ where: { userId } });
 }
 
+export async function getGoogleCalendarDiagnostic(userId: string) {
+  const status = await getGoogleConnectionStatus(userId);
+  const result = {
+    ...status,
+    apiVerified: false,
+    calendarAccessRole: null as string | null,
+    checkedAt: new Date().toISOString(),
+    issues: [...status.configIssues],
+  };
+  if (!status.configured || !status.connected) return result;
+
+  try {
+    const credentials = await getValidGoogleAccessToken(userId);
+    if (!credentials.token) {
+      result.needsReconnect = true;
+      result.issues.push("Reconnexion Google requise pour verifier le calendrier.");
+      return result;
+    }
+
+    // Read only calendar metadata, never event titles, attendees, or descriptions.
+    const response = await fetch(
+      `${GOOGLE_CALENDAR_BASE}/users/me/calendarList/${encodeURIComponent(status.calendarId)}?fields=id,accessRole`,
+      {
+        headers: { Authorization: `Bearer ${credentials.token}` },
+        signal: AbortSignal.timeout(10_000),
+        cache: "no-store",
+      },
+    );
+    if (!response.ok) {
+      result.needsReconnect = response.status === 401;
+      result.issues.push(
+        response.status === 401 ? "Reconnexion Google requise."
+          : response.status === 403 ? "Acces Google Agenda refuse. Verifiez les autorisations."
+            : response.status === 404 ? "Le calendrier configure est introuvable ou inaccessible."
+              : "La verification Google Agenda est temporairement indisponible.",
+      );
+      return result;
+    }
+    const calendar = await response.json() as { id?: string; accessRole?: string };
+    if (!calendar.id || !["owner", "writer", "reader", "freeBusyReader"].includes(calendar.accessRole ?? "")) {
+      result.issues.push("Google a retourne une reponse de calendrier incomplete.");
+      return result;
+    }
+    result.apiVerified = true;
+    result.calendarAccessRole = calendar.accessRole!;
+    if (!["owner", "writer"].includes(calendar.accessRole!)) {
+      result.issues.push("Ce compte ne peut pas modifier ce calendrier.");
+    }
+    return result;
+  } catch {
+    result.issues.push("La verification Google Agenda a echoue. Reessayez ou reconnectez le compte.");
+    return result;
+  }
+}
+
 export async function getValidGoogleAccessToken(userId: string) {
   const connection = await prisma.googleCalendarConnection.findUnique({ where: { userId } });
   if (!connection) {
@@ -229,6 +288,8 @@ export async function getValidGoogleAccessToken(userId: string) {
 async function googleCalendarRequest<T>(token: string, path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${GOOGLE_CALENDAR_BASE}${path}`, {
     ...init,
+    signal: AbortSignal.timeout(10_000),
+    cache: "no-store",
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
@@ -251,11 +312,14 @@ export async function fetchGoogleBusyRanges(params: {
 }) {
   const tokenResult = await getValidGoogleAccessToken(params.userId);
   if (!tokenResult.token) {
+    if (tokenResult.reason === "RECONNECT_REQUIRED") {
+      throw new Error("Reconnexion Google requise pour verifier les disponibilites");
+    }
     return { source: "NO_GOOGLE" as const, ranges: [] as BusyRange[] };
   }
 
   type FreeBusyResponse = {
-    calendars?: Record<string, { busy: Array<{ start: string; end: string }> }>;
+    calendars?: Record<string, { busy?: BusyRange[]; errors?: Array<{ reason?: string }> }>;
   };
 
   const body = {
@@ -270,7 +334,13 @@ export async function fetchGoogleBusyRanges(params: {
     body: JSON.stringify(body),
   });
 
-  const calendarBusy = Object.values(data.calendars ?? {})[0]?.busy ?? [];
+  // Google can return HTTP 200 with a per-calendar permission/not-found error.
+  // Never interpret that response as an empty (fully available) calendar.
+  const calendar = data.calendars?.[body.items[0].id];
+  if (!calendar || calendar.errors?.length || !Array.isArray(calendar.busy)) {
+    throw new Error("Impossible de verifier les disponibilites du calendrier Google");
+  }
+  const calendarBusy = calendar.busy;
 
   await prisma.googleCalendarConnection.updateMany({
     where: { userId: params.userId },

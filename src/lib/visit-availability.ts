@@ -1,22 +1,8 @@
 import { DateTime, Interval } from "luxon";
 import { appTimeZone } from "@/lib/env";
 
-export type WeekDayKey =
-  | "monday"
-  | "tuesday"
-  | "wednesday"
-  | "thursday"
-  | "friday"
-  | "saturday"
-  | "sunday";
-
-export type DaySchedule = {
-  enabled: boolean;
-  start: string;
-  end: string;
-};
-
-export type WeekSchedule = Record<WeekDayKey, DaySchedule>;
+import { getDefaultWeekSchedule, type WeekDayKey, type WeekSchedule } from "@/lib/visit-schedule";
+export { getDefaultWeekSchedule, type WeekDayKey, type DaySchedule, type WeekSchedule } from "@/lib/visit-schedule";
 
 export type AvailabilitySettings = {
   timeZone: string;
@@ -47,18 +33,6 @@ const dayByWeekday: Record<number, WeekDayKey> = {
   6: "saturday",
   7: "sunday",
 };
-
-export function getDefaultWeekSchedule(): WeekSchedule {
-  return {
-    monday: { enabled: true, start: "18:00", end: "21:00" },
-    tuesday: { enabled: true, start: "18:00", end: "21:00" },
-    wednesday: { enabled: true, start: "18:00", end: "21:00" },
-    thursday: { enabled: true, start: "18:00", end: "21:00" },
-    friday: { enabled: true, start: "18:00", end: "21:00" },
-    saturday: { enabled: true, start: "09:00", end: "17:00" },
-    sunday: { enabled: true, start: "09:00", end: "17:00" },
-  };
-}
 
 export function getDefaultAvailabilitySettings(): AvailabilitySettings {
   return {

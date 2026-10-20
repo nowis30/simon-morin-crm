@@ -8,6 +8,7 @@ describe("public listings helpers", () => {
     expect(formatPublicAddress("123 Boul Mercure, Drummondville #App 08")).toBe("Boul Mercure, Drummondville");
     expect(formatPublicAddress("123 rue Fictive, appartement 2B")).toBe("Rue Fictive");
     expect(formatPublicAddress("123 rue Fictive, unité # 3")).toBe("Rue Fictive");
+    expect(formatPublicAddress("Av. Du Marais-Ombragé, Drummondville (Immeuble 1635)")).toBe("Av. Du Marais-Ombragé, Drummondville");
   });
 
   it("construit des caractéristiques publiques lisibles", () => {

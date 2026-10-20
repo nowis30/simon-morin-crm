@@ -3,6 +3,7 @@ export function formatPublicAddress(address: string) {
     .replace(/^\d+\s+/, "")
     .replace(/(?:#\s*)?\b(?:app(?:art(?:ement)?)?|apt|unit[ée]?)\.?\s*(?:#|n[°o]\.?)?\s*\d+[a-z]?\b/gi, "")
     .replace(/#\s*\d+[a-z]?\b/gi, "")
+    .replace(/\(?\bimmeuble\s+(?:n[°o]\.?\s*)?\d+[a-z]?\)?/gi, "")
     .replace(/\s{2,}/g, " ")
     .trim();
 

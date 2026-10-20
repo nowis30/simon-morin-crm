@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Identifiants invalides" }, { status: 401 });
     }
 
-    const token = await createSessionToken({ userId: user.id, email: user.email });
+    const token = await createSessionToken({ userId: user.id, email: user.email, tokenVersion: user.tokenVersion });
     await setSessionCookie(token);
 
     return NextResponse.json({ ok: true });

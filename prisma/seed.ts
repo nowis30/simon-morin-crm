@@ -4,17 +4,27 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  const passwordHash = await bcrypt.hash("AdminTemp123!", 12);
+  // Le compte admin de démonstration n'est créé QUE si SEED_ADMIN_PASSWORD est
+  // défini (min 12 caractères). Jamais de mot de passe en dur dans le repo.
+  // Ne jamais lancer `prisma db seed` en production.
+  const seedAdminPassword = process.env.SEED_ADMIN_PASSWORD;
+  if (seedAdminPassword && seedAdminPassword.length >= 12) {
+    const passwordHash = await bcrypt.hash(seedAdminPassword, 12);
 
-  await prisma.user.upsert({
-    where: { email: "demo.admin@fictif.local" },
-    update: {},
-    create: {
-      email: "demo.admin@fictif.local",
-      name: "Administrateur DEMO FICTIF",
-      passwordHash,
-    },
-  });
+    await prisma.user.upsert({
+      where: { email: "demo.admin@fictif.local" },
+      update: {},
+      create: {
+        email: "demo.admin@fictif.local",
+        name: "Administrateur DEMO FICTIF",
+        passwordHash,
+      },
+    });
+  } else {
+    console.warn(
+      "SEED_ADMIN_PASSWORD absent ou trop court : compte admin de démonstration ignoré.",
+    );
+  }
 
   const properties = await Promise.all(
     [

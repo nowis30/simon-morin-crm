@@ -5,7 +5,7 @@ const maybeUrl = z.string().trim().url().optional().or(z.literal(""));
 export const setupSchema = z.object({
   name: z.string().min(2).max(120),
   email: z.string().email(),
-  password: z.string().min(10).max(200),
+  password: z.string().min(12).max(200),
 });
 
 export const loginSchema = z.object({

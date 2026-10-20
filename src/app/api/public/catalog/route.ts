@@ -9,6 +9,8 @@ import {
   type ListingPhoto,
 } from "@/lib/public-listings";
 import { publicCatalogQuerySchema } from "@/lib/validators";
+import { getClientIp } from "@/lib/route-guards";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 function normalizedQueryParams(input: URLSearchParams) {
   const record: Record<string, string> = {};
@@ -28,6 +30,11 @@ function normalizeSort(sort: string) {
 }
 
 export async function GET(request: NextRequest) {
+  const rate = checkRateLimit(`public-catalog:${getClientIp(request)}`, 120, 15 * 60 * 1000);
+  if (!rate.allowed) {
+    return NextResponse.json({ error: "Trop de demandes, reessayez plus tard" }, { status: 429 });
+  }
+
   const raw = normalizedQueryParams(request.nextUrl.searchParams);
   const parsed = publicCatalogQuerySchema.safeParse(raw);
 

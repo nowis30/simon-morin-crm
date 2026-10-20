@@ -33,7 +33,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         bedrooms: rentalUnit.bedrooms,
         propertyType: rentalUnit.propertyType,
         status: rentalUnit.status,
-        description: rentalUnit.publicDescription || rentalUnit.description,
+        description: rentalUnit.publicDescription || "",
         availableFrom: rentalUnit.availableFrom,
         petsAllowed: rentalUnit.petsAllowed,
         parking: rentalUnit.parking,

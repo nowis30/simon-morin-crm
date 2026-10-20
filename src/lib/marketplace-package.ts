@@ -4,6 +4,7 @@ import { AdvertisementStatus } from "@prisma/client";
 import { getPublicListingUrl } from "@/lib/public-url";
 import { getPublicFeatures } from "@/lib/public-listings";
 import { cleanText } from "@/lib/sanitize";
+import { fetchPublicImage } from "@/lib/public-image";
 
 const MAX_SELECTED_PHOTOS = 20;
 const MIN_SELECTED_PHOTOS = 1;
@@ -180,7 +181,7 @@ function validateSafePhotoUrl(rawUrl: string) {
     return { ok: false as const, reason: "URL invalide" };
   }
 
-  if (parsed.protocol !== "https:") {
+  if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.port) {
     return { ok: false as const, reason: "URL non securisee" };
   }
 
@@ -241,19 +242,7 @@ function normalizeSelectedPhotos(record: MarketplacePreparationRecord, orderedPh
 }
 
 async function fetchImageBuffer(url: string) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT_MS);
-
-  try {
-    const response = await fetch(url, {
-      method: "GET",
-      redirect: "manual",
-      signal: controller.signal,
-      headers: {
-        Accept: "image/jpeg,image/png,image/webp,*/*",
-      },
-      cache: "no-store",
-    });
+    const response = await fetchPublicImage(url, MAX_IMAGE_SIZE_BYTES, IMAGE_FETCH_TIMEOUT_MS);
 
     if (response.status >= 300 && response.status < 400) {
       throw new Error("Redirection refusee");
@@ -286,9 +275,6 @@ async function fetchImageBuffer(url: string) {
       buffer,
       extension: getImageExtensionFromContentType(contentType, url),
     };
-  } finally {
-    clearTimeout(timeout);
-  }
 }
 
 function buildZipFileName(listingId: string, date = new Date()) {

@@ -1,43 +1,17 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { getPublicAppUrl } from "@/lib/public-url";
+import { getPublicCatalog } from "@/lib/public-catalog";
+
+export const dynamic = "force-dynamic";
 
 const OFFICIAL_PUBLIC_EMAIL = "simonmorin@nowis.store";
 const OFFICIAL_PUBLIC_PHONE_DISPLAY = "819-388-3407";
 const OFFICIAL_PUBLIC_PHONE_TECHNICAL = "+18193883407";
 
 async function getCatalogItems() {
-  const response = await fetch(`${getPublicAppUrl()}/api/public/catalog`, {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    return [] as Array<{
-      id: string;
-      address: string;
-      city: string;
-      district?: string | null;
-      monthlyPrice: number;
-      bedrooms: number;
-      propertyType: string;
-      imageUrl?: string | null;
-      photoCount?: number;
-    }>;
-  }
-
-  const data = await response.json();
-  return (data.items as Array<{
-    id: string;
-    address: string;
-    city: string;
-    district?: string | null;
-    monthlyPrice: number;
-    bedrooms: number;
-    propertyType: string;
-    imageUrl?: string | null;
-    photoCount?: number;
-  }>).slice(0, 3);
+  const data = await getPublicCatalog(new URLSearchParams({ pageSize: "3" }));
+  return data.items;
 }
 
 export const metadata: Metadata = {

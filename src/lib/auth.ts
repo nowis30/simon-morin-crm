@@ -10,6 +10,7 @@ const encoder = new TextEncoder();
 type SessionPayload = {
   userId: string;
   email: string;
+  tokenVersion: number;
 };
 
 export async function hashPassword(password: string) {
@@ -29,8 +30,14 @@ export async function createSessionToken(payload: SessionPayload) {
 }
 
 export async function readSessionToken(token: string) {
-  const verified = await jwtVerify(token, encoder.encode(env.SESSION_SECRET));
-  return verified.payload as SessionPayload;
+  const { payload } = await jwtVerify(token, encoder.encode(env.SESSION_SECRET), { algorithms: ["HS256"] });
+  const tokenVersion = payload.tokenVersion ?? 0;
+  if (typeof payload.userId !== "string" || !payload.userId ||
+      typeof payload.email !== "string" || !Number.isSafeInteger(tokenVersion) ||
+      (tokenVersion as number) < 0) {
+    throw new Error("Session invalide");
+  }
+  return { userId: payload.userId, email: payload.email, tokenVersion: tokenVersion as number };
 }
 
 export async function setSessionCookie(token: string) {
@@ -69,7 +76,16 @@ export async function getCurrentUser() {
 
   try {
     const payload = await readSessionToken(session);
-    return prisma.user.findUnique({ where: { id: payload.userId } });
+    const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+    if (!user) {
+      return null;
+    }
+    // Invalide les sessions émises avant un changement de mot de passe
+    // (les jetons émis avant l'ajout de tokenVersion valent 0 par défaut).
+    if ((payload.tokenVersion ?? 0) !== user.tokenVersion) {
+      return null;
+    }
+    return user;
   } catch {
     return null;
   }

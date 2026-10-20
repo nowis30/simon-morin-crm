@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getCurrentUser, hasAnyAdmin } from "@/lib/auth";
 import { MobileNav } from "@/components/mobile-nav";
+import { LogoutButton } from "@/components/auth/logout-button";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -56,9 +57,7 @@ export default async function PrivateLayout({ children }: { children: React.Reac
             Voir les logements publics
           </Link>
           <span className="max-w-[220px] truncate rounded-md bg-white/80 px-3 py-2 text-sm">{user.email}</span>
-          <form action="/api/auth/logout" method="post">
-            <button className="rounded-lg bg-white px-4 py-2 text-sm font-semibold">Deconnexion</button>
-          </form>
+          <LogoutButton className="rounded-lg bg-white px-4 py-2 text-sm font-semibold" />
         </div>
       </header>
       <div className="mx-auto grid w-full max-w-7xl min-w-0 gap-4 px-4 pb-10 md:grid-cols-[240px_1fr] md:px-6">

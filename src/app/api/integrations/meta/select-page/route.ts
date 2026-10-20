@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { validateCsrfRequest } from "@/lib/csrf";
 import { requireApiUser, safeServerError } from "@/lib/route-guards";
 import { writeAuditLog } from "@/lib/audit";
 
@@ -7,6 +8,9 @@ export async function POST(request: Request) {
     const auth = await requireApiUser();
     if (auth.response) {
       return auth.response;
+    }
+    if (!(await validateCsrfRequest(request))) {
+      return NextResponse.json({ error: "CSRF invalide" }, { status: 403 });
     }
 
     const body = await request.json().catch(() => ({}));

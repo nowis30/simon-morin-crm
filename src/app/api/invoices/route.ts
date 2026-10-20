@@ -48,7 +48,7 @@ export async function GET() {
     });
 
     const available = commissions
-      .filter((item) => !item.invoiceNumber && item.status !== "CANCELLED")
+      .filter((item) => !item.invoiceNumber && item.status !== "CANCELLED" && item.status !== "PAID")
       .map((item) => ({
         id: item.id,
         plannedAmount: item.plannedAmount,
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "CSRF invalide" }, { status: 403 });
     }
 
-    const payload = await request.json();
+    const payload = await request.json().catch(() => ({}));
     const parsed = invoiceCreateSchema.safeParse(payload);
     if (!parsed.success) {
       return NextResponse.json({ error: "Données de facture invalides" }, { status: 400 });
@@ -129,74 +129,83 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Une commission ne peut apparaître qu'une fois sur la facture." }, { status: 400 });
     }
 
-    const commissions = await prisma.commission.findMany({
-      where: { id: { in: ids } },
-      include: {
-        placement: {
-          include: { prospect: true, property: true },
-        },
-      },
-    });
-
-    if (commissions.length !== ids.length) {
-      return NextResponse.json({ error: "Une commission sélectionnée est introuvable." }, { status: 404 });
-    }
-
-    if (commissions.some((item) => item.invoiceNumber)) {
-      return NextResponse.json({ error: "Une commission sélectionnée a déjà été facturée." }, { status: 409 });
-    }
-
-    const now = new Date();
-    const year = now.getFullYear();
-    const prefix = `SM-${year}-`;
-    const existingInvoices = await prisma.commission.findMany({
-      where: { invoiceNumber: { startsWith: prefix } },
-      select: { invoiceNumber: true },
-      distinct: ["invoiceNumber"],
-    });
-    const lastSequence = existingInvoices.reduce((max, item) => {
-      const suffix = item.invoiceNumber?.slice(prefix.length) ?? "";
-      const sequence = Number.parseInt(suffix, 10);
-      return Number.isFinite(sequence) ? Math.max(max, sequence) : max;
-    }, 0);
-    const invoiceNumber = `${prefix}${String(lastSequence + 1).padStart(3, "0")}`;
-    const amountByCommission = new Map(parsed.data.lines.map((line) => [line.commissionId, line.amount]));
-
-    await prisma.$transaction(
-      commissions.map((item) =>
-        prisma.commission.update({
-          where: { id: item.id },
-          data: {
-            invoicedAmount: amountByCommission.get(item.id),
-            invoiceNumber,
-            status: "INVOICED",
-            billedAt: now,
+    const result = await prisma.$transaction(async (tx) => {
+      // Serialize numbering and eligibility checks across all application instances.
+      await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(48293142)`;
+      const commissions = await tx.commission.findMany({
+        where: { id: { in: ids } },
+        include: {
+          placement: {
+            include: { prospect: true, property: true },
           },
-        }),
-      ),
-    );
-
-    const lines: InvoiceLine[] = commissions.map((item) => ({
-      id: item.id,
-      commissionId: item.id,
-      tenantName: item.placement.prospect.name,
-      propertyCode: item.placement.property.codeIsr,
-      address: item.placement.property.address,
-      city: item.placement.property.city,
-      amount: amountByCommission.get(item.id) ?? item.plannedAmount,
-    }));
-
-    return NextResponse.json(
-      {
-        invoice: {
-          number: invoiceNumber,
-          billedAt: now,
-          total: lines.reduce((sum, line) => sum + line.amount, 0),
-          lines,
         },
-      },
-      { status: 201 },
-    );
+      });
+
+      if (commissions.length !== ids.length) {
+        return { error: "Une commission sélectionnée est introuvable.", status: 404 };
+      }
+
+      if (commissions.some((item) => item.invoiceNumber)) {
+        return { error: "Une commission sélectionnée a déjà été facturée.", status: 409 };
+      }
+      if (commissions.some((item) => item.status === "CANCELLED" || item.status === "PAID")) {
+        return { error: "Une commission annulée ou déjà payée ne peut pas être facturée.", status: 409 };
+      }
+
+      const now = new Date();
+      const year = now.getFullYear();
+      const prefix = `SM-${year}-`;
+      const existingInvoices = await tx.commission.findMany({
+        where: { invoiceNumber: { startsWith: prefix } },
+        select: { invoiceNumber: true },
+        distinct: ["invoiceNumber"],
+      });
+      const lastSequence = existingInvoices.reduce((max, item) => {
+        const suffix = item.invoiceNumber?.slice(prefix.length) ?? "";
+        const sequence = Number.parseInt(suffix, 10);
+        return Number.isFinite(sequence) ? Math.max(max, sequence) : max;
+      }, 0);
+      const invoiceNumber = `${prefix}${String(lastSequence + 1).padStart(3, "0")}`;
+      const amountByCommission = new Map(parsed.data.lines.map((line) => [line.commissionId, line.amount]));
+
+      await Promise.all(
+        commissions.map((item) =>
+          tx.commission.update({
+            where: { id: item.id },
+            data: {
+              invoicedAmount: amountByCommission.get(item.id),
+              invoiceNumber,
+              status: "INVOICED",
+              billedAt: now,
+            },
+          }),
+        ),
+      );
+
+      const lines: InvoiceLine[] = commissions.map((item) => ({
+        id: item.id,
+        commissionId: item.id,
+        tenantName: item.placement.prospect.name,
+        propertyCode: item.placement.property.codeIsr,
+        address: item.placement.property.address,
+        city: item.placement.property.city,
+        amount: amountByCommission.get(item.id) ?? item.plannedAmount,
+      }));
+
+      return {
+          invoice: {
+            number: invoiceNumber,
+            billedAt: now,
+            total: lines.reduce((sum, line) => sum + line.amount, 0),
+            lines,
+          },
+        status: 201,
+      };
+      }, { timeout: 10000 });
+    if ("error" in result) {
+      return NextResponse.json({ error: result.error }, { status: result.status });
+    }
+    return NextResponse.json({ invoice: result.invoice }, { status: result.status });
   } catch {
     return safeServerError();
   }

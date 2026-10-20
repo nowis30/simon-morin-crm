@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isIP } from "node:net";
 import { getCurrentUser } from "@/lib/auth";
 
 export async function requireApiUser() {
@@ -17,9 +18,15 @@ export function safeServerError() {
 }
 
 export function getClientIp(request: NextRequest) {
-  return (
+  // Render's edge overwrites this header. Do not trust a caller's X-Forwarded-For.
+  if (process.env.RENDER === "true") {
+    const ip = request.headers.get("cf-connecting-ip")?.trim();
+    return ip && isIP(ip) ? ip : "unknown";
+  }
+  const ip = (
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     request.headers.get("x-real-ip") ||
     "unknown"
   );
+  return isIP(ip) ? ip : "unknown";
 }

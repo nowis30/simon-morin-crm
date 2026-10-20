@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { NextRequest } from "next/server";
 import { POST } from "@/app/api/public/visits/route";
 
 const { prismaMock, auditMock } = vi.hoisted(() => ({
@@ -16,7 +17,7 @@ vi.mock("@/lib/audit", () => ({ writeAuditLog: auditMock }));
 describe("public visit policy", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    prismaMock.property.findUnique.mockResolvedValue({ id: "property-1", status: "AVAILABLE" });
+    prismaMock.property.findUnique.mockResolvedValue({ id: "property-1", status: "AVAILABLE", rentalUnitId: "unit-1" });
     prismaMock.prospect.findFirst.mockResolvedValue(null);
     prismaMock.prospect.create.mockResolvedValue({ id: "prospect-1" });
     prismaMock.visit.findUnique.mockResolvedValue(null);
@@ -30,7 +31,7 @@ describe("public visit policy", () => {
 
   it("creates a PENDING_APPROVAL visit from public source without modifying property status", async () => {
     const response = await POST(
-      new Request("http://localhost/api/public/visits", {
+      new NextRequest("http://localhost/api/public/visits", {
         method: "POST",
         body: JSON.stringify({
           prospect: {
@@ -73,7 +74,7 @@ describe("public visit policy", () => {
     prismaMock.visit.findUnique.mockResolvedValue({ id: "visit-existing", status: "PENDING_APPROVAL" });
 
     const response = await POST(
-      new Request("http://localhost/api/public/visits", {
+      new NextRequest("http://localhost/api/public/visits", {
         method: "POST",
         body: JSON.stringify({
           prospect: {
@@ -99,6 +100,24 @@ describe("public visit policy", () => {
     expect(response.status).toBe(200);
     const json = await response.json();
     expect(json.duplicate).toBe(true);
+    expect(prismaMock.prospect.update).not.toHaveBeenCalled();
+    expect(prismaMock.visit.create).not.toHaveBeenCalled();
+  });
+
+  it("refuses a hidden unit even when its linked property is available", async () => {
+    prismaMock.property.findUnique.mockResolvedValue({
+      id: "property-1", status: "AVAILABLE",
+      rentalUnit: { status: "AVAILABLE", isPubliclyVisible: false },
+    });
+    const response = await POST(new NextRequest("http://localhost/api/public/visits", {
+      method: "POST",
+      body: JSON.stringify({
+        prospect: { name: "Alice", phone: "5145550101" },
+        visit: { propertyId: "property-1", startsAt: "2030-01-01T10:00:00.000Z" },
+      }),
+    }));
+    expect(response.status).toBe(404);
+    expect(prismaMock.prospect.create).not.toHaveBeenCalled();
     expect(prismaMock.visit.create).not.toHaveBeenCalled();
   });
 });

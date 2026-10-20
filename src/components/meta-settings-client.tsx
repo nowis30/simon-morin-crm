@@ -52,7 +52,14 @@ export function MetaSettingsClient() {
     setError(null);
     setMessage(null);
     try {
-      const response = await fetch(path, { method });
+      const headers: Record<string, string> = {};
+      if (method !== "GET") {
+        const csrfResponse = await fetch("/api/csrf", { cache: "no-store" });
+        if (!csrfResponse.ok) throw new Error("Impossible de sécuriser la demande");
+        const { token } = await csrfResponse.json();
+        headers["x-csrf-token"] = token;
+      }
+      const response = await fetch(path, { method, headers });
       const json = await response.json();
       if (!response.ok) throw new Error(json.error || "Action Meta impossible");
       setMessage(json.message || "Action réalisée");

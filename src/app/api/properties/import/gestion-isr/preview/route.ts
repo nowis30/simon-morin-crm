@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { validateCsrfRequest } from "@/lib/csrf";
 import { requireApiUser, safeServerError } from "@/lib/route-guards";
 import { prisma } from "@/lib/prisma";
 import { fetchGestionIsrListings, inferGestionIsrMetadata, normalizeGestionIsrUnitStatus } from "@/integrations/gestion-isr/importer";
@@ -23,6 +24,9 @@ export async function POST(request: Request) {
     const auth = await requireApiUser();
     if (auth.response) {
       return auth.response;
+    }
+    if (!(await validateCsrfRequest(request))) {
+      return NextResponse.json({ error: "CSRF invalide" }, { status: 403 });
     }
 
     const payload = (await request.json().catch(() => ({}))) as { url?: string };

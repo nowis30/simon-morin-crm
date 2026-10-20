@@ -7,8 +7,8 @@ import {
   hasGoogleCalendarCredentials,
   upsertGoogleConnection,
 } from "@/lib/google-calendar";
-import { env, getGoogleCalendarConfigIssues } from "@/lib/env";
-import { requireApiUser, safeServerError } from "@/lib/route-guards";
+import { getGoogleCalendarConfigIssues } from "@/lib/env";
+import { requireApiUser } from "@/lib/route-guards";
 
 export async function GET(request: NextRequest) {
   try {

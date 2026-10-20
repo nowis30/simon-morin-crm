@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
-import { middleware } from "../middleware";
+import { proxy as middleware } from "@/proxy";
 import { AUTH_COOKIE_NAME } from "@/lib/auth";
 
 describe("middleware public/private separation", () => {
@@ -10,6 +10,8 @@ describe("middleware public/private separation", () => {
       new NextRequest("http://localhost/logements"),
       new NextRequest("http://localhost/logements/unit-1"),
       new NextRequest("http://localhost/contact"),
+      new NextRequest("http://localhost/logo.png"),
+      new NextRequest("http://localhost/annonce.png"),
       new NextRequest("http://localhost/api/public/catalog"),
       new NextRequest("http://localhost/api/public/contact"),
     ];
@@ -36,12 +38,12 @@ describe("middleware public/private separation", () => {
     expect(response.headers.get("location")).toContain("/login");
   });
 
-  it("redirects internal admin API routes when not authenticated", () => {
+  it("rejects internal APIs with JSON and disables caching", () => {
     const request = new NextRequest("http://localhost/api/properties");
     const response = middleware(request);
 
-    expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toContain("/login");
+    expect(response.status).toBe(401);
+    expect(response.headers.get("cache-control")).toContain("no-store");
   });
 
   it("allows private pages when an auth cookie exists", () => {
@@ -53,5 +55,6 @@ describe("middleware public/private separation", () => {
 
     const response = middleware(request);
     expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toContain("no-store");
   });
 });

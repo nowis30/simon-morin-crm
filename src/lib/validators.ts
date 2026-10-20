@@ -5,12 +5,12 @@ const maybeUrl = z.string().trim().url().optional().or(z.literal(""));
 export const setupSchema = z.object({
   name: z.string().min(2).max(120),
   email: z.string().email(),
-  password: z.string().min(10).max(200),
+  password: z.string().min(12).max(200),
 });
 
 export const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
+  email: z.string().max(254).email(),
+  password: z.string().min(1).max(200),
 });
 
 export const propertyCreateSchema = z.object({
@@ -100,13 +100,13 @@ export const visitCreateSchema = z.object({
 export const publicVisitSubmissionSchema = z.object({
   prospect: z.object({
     name: z.string().min(2).max(120),
-    phone: z.string().min(7).max(30),
+    phone: z.string().min(7).max(30).refine((phone) => /^\d{7,15}$/.test(phone.replace(/\D/g, ""))),
     email: z.string().email().optional().or(z.literal("")),
     preferredLanguage: z.enum(["fr", "en"]).default("fr"),
     maxBudget: z.coerce.number().int().positive().optional(),
-    preferredDistricts: z.array(z.string().min(1)).default([]),
+    preferredDistricts: z.array(z.string().min(1).max(120)).max(30).default([]),
     bedroomsNeeded: z.coerce.number().int().min(0).max(10).optional(),
-    moveInDate: z.string().optional(),
+    moveInDate: z.string().refine((date) => Number.isFinite(Date.parse(date))).optional().or(z.literal("")),
     occupantsCount: z.coerce.number().int().min(1).max(12).optional(),
     hasPets: z.coerce.boolean().default(false),
     needsParking: z.coerce.boolean().default(false),
@@ -124,7 +124,7 @@ export const publicVisitSubmissionSchema = z.object({
 
 export const publicContactSubmissionSchema = z.object({
   name: z.string().min(2).max(120),
-  phone: z.string().min(7).max(30),
+  phone: z.string().min(7).max(30).refine((phone) => /^\d{7,15}$/.test(phone.replace(/\D/g, ""))),
   email: z.string().email().optional().or(z.literal("")),
   preferredContactMethod: z.enum(["PHONE", "EMAIL", "SMS", "MESSENGER", "OTHER"]).default("PHONE"),
   message: z.string().min(10).max(2000),

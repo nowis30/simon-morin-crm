@@ -2,37 +2,15 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { ListingSearch } from "@/components/public/listing-search";
-import { getPublicAppUrl } from "@/lib/public-url";
+import { getPublicCatalog } from "@/lib/public-catalog";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Logements disponibles",
   alternates: {
     canonical: "/logements",
   },
-};
-
-type CatalogResponse = {
-  items: Array<{
-    id: string;
-    address: string;
-    city: string;
-    district?: string | null;
-    monthlyPrice: number;
-    bedrooms: number;
-    propertyType: string;
-    availableFrom?: string | null;
-    imageUrl?: string | null;
-    photoCount?: number;
-    petsAllowed?: boolean;
-    parking?: boolean;
-    inclusions?: string | null;
-    features: string[];
-  }>;
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-  filters: Record<string, unknown>;
 };
 
 function buildQueryString(searchParams: Record<string, string | string[] | undefined>) {
@@ -63,22 +41,7 @@ function buildPageUrl(
 
 async function getCatalogItems(searchParams: Record<string, string | string[] | undefined>) {
   const query = buildQueryString(searchParams);
-  const url = `${getPublicAppUrl()}/api/public/catalog${query ? `?${query}` : ""}`;
-
-  const response = await fetch(url, { cache: "no-store" });
-
-  if (!response.ok) {
-    return {
-      items: [],
-      total: 0,
-      page: 1,
-      pageSize: 24,
-      totalPages: 1,
-      filters: {},
-    } as CatalogResponse;
-  }
-
-  return response.json() as Promise<CatalogResponse>;
+  return getPublicCatalog(new URLSearchParams(query));
 }
 
 export default async function PublicListingsPage({

@@ -104,4 +104,13 @@ describe("public catalog policy", () => {
     expect(json.items[0].rentalUnit).toBeUndefined();
     expect(json.items[0].building).toBeUndefined();
   });
+  it("does not bypass unit visibility through the legacy property fallback", async () => {
+    mockPrisma.rentalUnit.count.mockResolvedValue(0);
+    const { GET } = await import("@/app/api/public/catalog/route");
+    const response = await GET(new NextRequest("http://localhost/api/public/catalog?city=absent"));
+    expect(response.status).toBe(200);
+    expect(mockPrisma.property.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ rentalUnitId: null, archivedAt: null }),
+    }));
+  });
 });

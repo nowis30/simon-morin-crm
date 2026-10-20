@@ -12,6 +12,7 @@ export function parseCsvText(text: string) {
 export function toCsv(data: Record<string, unknown>[]) {
   return stringify(data, {
     header: true,
+    escape_formulas: true,
   });
 }
 

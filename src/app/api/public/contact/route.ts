@@ -1,14 +1,21 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { writeAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { cleanText } from "@/lib/sanitize";
+import { getClientIp } from "@/lib/route-guards";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { publicContactSubmissionSchema } from "@/lib/validators";
 
 function normalizePhone(phone: string) {
   return cleanText(phone).replace(/\D/g, "");
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const rate = checkRateLimit(`public-contact:${getClientIp(request)}`, 10, 15 * 60 * 1000);
+  if (!rate.allowed) {
+    return NextResponse.json({ error: "Trop de demandes, reessayez plus tard" }, { status: 429 });
+  }
+
   const payload = await request.json().catch(() => ({}));
   const parsed = publicContactSubmissionSchema.safeParse(payload);
 
@@ -33,23 +40,16 @@ export async function POST(request: Request) {
   });
 
   const now = new Date();
-  const message = cleanText(parsed.data.message);
+  const message = [
+    `Demande publique de ${cleanText(parsed.data.name)} — ${normalizedPhone} — ${normalizedEmail}`,
+    cleanText(parsed.data.message),
+  ].join("\n");
   const preferredMethod = parsed.data.preferredContactMethod;
 
   const duplicateSince = new Date(now.getTime() - 5 * 60 * 1000);
 
   const prospect = existingProspect
-    ? await prisma.prospect.update({
-        where: { id: existingProspect.id },
-        data: {
-          name: cleanText(parsed.data.name),
-          phone: normalizedPhone || cleanText(parsed.data.phone),
-          email: normalizedEmail || null,
-          status: "TO_CONTACT",
-          lastContactAt: now,
-          notes: [existingProspect.notes, `Contact public: ${message}`].filter(Boolean).join("\n\n").slice(0, 1500),
-        },
-      })
+    ? existingProspect
     : await prisma.prospect.create({
         data: {
           name: cleanText(parsed.data.name),

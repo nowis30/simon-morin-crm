@@ -560,7 +560,7 @@ export function MarketingApprovalClient() {
         ) : null}
         <div className="flex flex-wrap gap-2">
           <a href="/api/integrations/meta/facebook/connect" className="rounded-lg bg-[var(--accent)] px-4 py-2 text-white">Connecter Meta</a>
-          <a href="/api/integrations/meta/facebook/connect" className="rounded-lg border border-emerald-300 px-4 py-2">Reconnecter la Page Facebook</a>
+          <a href="/api/integrations/meta/facebook/connect?oauth=1" className="rounded-lg border border-emerald-300 px-4 py-2">Reconnecter la Page Facebook</a>
           <button onClick={testFacebookConnection} className="rounded-lg border border-emerald-300 px-4 py-2">Tester la connexion Facebook</button>
           <button onClick={disconnectMeta} className="rounded-lg border border-emerald-300 px-4 py-2">Deconnecter</button>
         </div>

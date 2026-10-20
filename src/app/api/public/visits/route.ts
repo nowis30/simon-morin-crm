@@ -70,7 +70,7 @@ export async function POST(request: Request) {
 
   const existingVisit = await prisma.visit.findUnique({ where: { idempotencyKey } });
   if (existingVisit) {
-    return NextResponse.json({ ok: true, item: existingVisit, duplicate: true });
+    return NextResponse.json({ ok: true, duplicate: true });
   }
 
   const visitRecord = await prisma.visit.create({
@@ -84,7 +84,6 @@ export async function POST(request: Request) {
       status: "PENDING_APPROVAL",
       idempotencyKey,
     },
-    include: { prospect: true, property: true },
   });
 
   await writeAuditLog({
@@ -100,5 +99,5 @@ export async function POST(request: Request) {
     },
   });
 
-  return NextResponse.json({ ok: true, item: visitRecord });
+  return NextResponse.json({ ok: true, visitId: visitRecord.id });
 }

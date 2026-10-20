@@ -1,14 +1,21 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { writeAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { cleanText } from "@/lib/sanitize";
+import { getClientIp } from "@/lib/route-guards";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { publicContactSubmissionSchema } from "@/lib/validators";
 
 function normalizePhone(phone: string) {
   return cleanText(phone).replace(/\D/g, "");
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const rate = checkRateLimit(`public-contact:${getClientIp(request)}`, 10, 15 * 60 * 1000);
+  if (!rate.allowed) {
+    return NextResponse.json({ error: "Trop de demandes, reessayez plus tard" }, { status: 429 });
+  }
+
   const payload = await request.json().catch(() => ({}));
   const parsed = publicContactSubmissionSchema.safeParse(payload);
 

@@ -5,6 +5,9 @@ describe("public listings helpers", () => {
   it("retire le numéro civique et l'appartement de l'adresse publique", () => {
     expect(formatPublicAddress("123 Rue Lagacé #315")).toBe("Rue Lagacé");
     expect(formatPublicAddress("45 Boulevard Saint-Jean, apt 2")).toBe("Boulevard Saint-Jean");
+    expect(formatPublicAddress("123 Boul Mercure, Drummondville #App 08")).toBe("Boul Mercure, Drummondville");
+    expect(formatPublicAddress("123 rue Fictive, appartement 2B")).toBe("Rue Fictive");
+    expect(formatPublicAddress("123 rue Fictive, unité # 3")).toBe("Rue Fictive");
   });
 
   it("construit des caractéristiques publiques lisibles", () => {

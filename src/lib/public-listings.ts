@@ -1,10 +1,8 @@
 export function formatPublicAddress(address: string) {
   const normalized = address
     .replace(/^\d+\s+/, "")
-    .replace(/\b#\d+\b/gi, "")
-    .replace(/\bapt\.?\s*\d+\b/gi, "")
-    .replace(/\bappart\.?\s*\d+\b/gi, "")
-    .replace(/\bunit(?:e)?\s*\d+\b/gi, "")
+    .replace(/(?:#\s*)?\b(?:app(?:art(?:ement)?)?|apt|unit[ée]?)\.?\s*(?:#|n[°o]\.?)?\s*\d+[a-z]?\b/gi, "")
+    .replace(/#\s*\d+[a-z]?\b/gi, "")
     .replace(/\s{2,}/g, " ")
     .trim();
 

@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createGoogleCalendarAuthUrl, createOAuthState, hasGoogleCalendarCredentials } from "@/lib/google-calendar";
 import { getGoogleCalendarConfigIssues } from "@/lib/env";
 import { requireApiUser, safeServerError } from "@/lib/route-guards";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const auth = await requireApiUser();
     if (auth.response) {

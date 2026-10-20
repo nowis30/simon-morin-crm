@@ -1,6 +1,8 @@
 import JSZip from "jszip";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildMarketplacePublicText, buildMarketplaceZipPackage, type MarketplacePreparationRecord } from "@/lib/marketplace-package";
+import { fetchPublicImage } from "@/lib/public-image";
+vi.mock("@/lib/public-image", () => ({ fetchPublicImage: vi.fn() }));
 
 function createRecord(): MarketplacePreparationRecord {
   return {
@@ -55,12 +57,12 @@ describe("marketplace package", () => {
   });
 
   it("cree un zip valide avec fichiers textes et photos numerotees", async () => {
-    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+    vi.mocked(fetchPublicImage).mockImplementation(async (url: string) => {
       const isPng = String(url).endsWith(".png");
       const bytes = isPng ? new Uint8Array([137, 80, 78, 71]) : new Uint8Array([255, 216, 255, 224]);
       const contentType = isPng ? "image/png" : "image/jpeg";
       return new Response(bytes, { status: 200, headers: { "content-type": contentType, "content-length": String(bytes.byteLength) } });
-    }));
+    });
 
     const text = buildMarketplacePublicText(createRecord()).text;
     const result = await buildMarketplaceZipPackage({
@@ -101,13 +103,13 @@ describe("marketplace package", () => {
   });
 
   it("continue et signale un echec partiel de photo", async () => {
-    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+    vi.mocked(fetchPublicImage).mockImplementation(async (url: string) => {
       if (String(url).includes("2.png")) {
         return new Response(new Uint8Array(10), { status: 200, headers: { "content-type": "image/png", "content-length": String(10 * 1024 * 1024) } });
       }
       const bytes = new Uint8Array([255, 216, 255, 224]);
       return new Response(bytes, { status: 200, headers: { "content-type": "image/jpeg", "content-length": String(bytes.byteLength) } });
-    }));
+    });
 
     const result = await buildMarketplaceZipPackage({
       record: createRecord(),

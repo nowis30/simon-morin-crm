@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { LogoutButton } from "@/components/auth/logout-button";
 
 const links = [
   { href: "/dashboard", label: "Tableau de bord" },
@@ -51,9 +52,7 @@ export function MobileNav() {
           <Link href="/logements" className="rounded-lg border border-emerald-200 px-3 py-2 text-sm" onClick={() => setOpen(false)}>
             Voir les logements publics
           </Link>
-          <form action="/api/auth/logout" method="post">
-            <button className="w-full rounded-lg border border-emerald-200 px-3 py-2 text-left text-sm">Deconnexion</button>
-          </form>
+          <LogoutButton className="w-full rounded-lg border border-emerald-200 px-3 py-2 text-left text-sm" />
         </div>
       ) : null}
     </>

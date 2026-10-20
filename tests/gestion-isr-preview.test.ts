@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { NextRequest } from "next/server";
 import { POST as publicVisitsRoute } from "@/app/api/public/visits/route";
 import { POST as previewRoute } from "@/app/api/properties/import/gestion-isr/preview/route";
 import { POST as applyRoute } from "@/app/api/properties/import/gestion-isr/apply/route";
 import { fetchGestionIsrListings } from "@/integrations/gestion-isr/importer";
 import { prisma } from "@/lib/prisma";
+vi.mock("@/lib/csrf", () => ({ validateCsrfRequest: vi.fn(async () => true) }));
 
 const { prismaMock, writeAuditLogMock } = vi.hoisted(() => ({
   prismaMock: {
@@ -91,7 +93,7 @@ describe("gestion ISR preview/apply", () => {
   it("sends public visits as JSON and creates a visit without changing ISR status", async () => {
     (prisma.property.findUnique as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "property-1", status: "AVAILABLE" });
 
-    const response = await publicVisitsRoute(new Request("http://localhost/api/public/visits", {
+    const response = await publicVisitsRoute(new NextRequest("http://localhost/api/public/visits", {
       method: "POST",
       body: JSON.stringify({
         prospect: { name: "Jean", phone: "5145550100", email: "jean@example.com", preferredLanguage: "fr", notes: "", hasPets: false, needsParking: false, preferredDistricts: [] },
@@ -110,14 +112,17 @@ describe("gestion ISR preview/apply", () => {
     (prisma.property.findUnique as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "property-1", status: "AVAILABLE" });
     (prisma.visit.create as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: "visit-1", propertyId: "property-1", prospectId: "prospect-1", property: { id: "property-1" }, prospect: { id: "prospect-1" } });
 
-    const response = await publicVisitsRoute(new Request("http://localhost/api/public/visits", {
+    const response = await publicVisitsRoute(new NextRequest("http://localhost/api/public/visits", {
       method: "POST",
       body: JSON.stringify({ prospect: { name: "Ava", phone: "5145551111", email: "ava@example.com", preferredLanguage: "fr", notes: "", hasPets: false, needsParking: false, preferredDistricts: [] }, visit: { propertyId: "property-1", startsAt: new Date("2026-08-02T10:00:00.000Z").toISOString(), endsAt: new Date("2026-08-02T10:30:00.000Z").toISOString() } }),
     }));
 
     expect(response.status).toBe(200);
     const json = await response.json();
-    expect(json.item.propertyId).toBe("property-1");
+    expect(json).toEqual({ ok: true, visitId: "visit-1" });
+    expect(prismaMock.visit.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ propertyId: "property-1" }),
+    }));
   });
 
   it("refuses apply without preview id", async () => {

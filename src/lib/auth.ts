@@ -30,8 +30,14 @@ export async function createSessionToken(payload: SessionPayload) {
 }
 
 export async function readSessionToken(token: string) {
-  const verified = await jwtVerify(token, encoder.encode(env.SESSION_SECRET));
-  return verified.payload as SessionPayload;
+  const { payload } = await jwtVerify(token, encoder.encode(env.SESSION_SECRET), { algorithms: ["HS256"] });
+  const tokenVersion = payload.tokenVersion ?? 0;
+  if (typeof payload.userId !== "string" || !payload.userId ||
+      typeof payload.email !== "string" || !Number.isSafeInteger(tokenVersion) ||
+      (tokenVersion as number) < 0) {
+    throw new Error("Session invalide");
+  }
+  return { userId: payload.userId, email: payload.email, tokenVersion: tokenVersion as number };
 }
 
 export async function setSessionCookie(token: string) {

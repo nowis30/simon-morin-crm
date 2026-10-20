@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type Trip = { id: string; tripDate: string; destinationAddress: string; purpose: string; businessKm: number; parkingAmount: number; tollAmount: number; distanceSource: string };
 type VisitOption = { id: string; startsAt: string; status: string; address: string; city: string; codeIsr: string; prospectName: string };
@@ -44,7 +44,7 @@ export function MileageClient() {
     return (await fetch("/api/csrf").then((response) => response.json())).token as string;
   }
 
-  async function load(selectedYear = year) {
+  const load = useCallback(async (selectedYear = year) => {
     const response = await fetch(`/api/mileage?year=${selectedYear}`);
     const data = await response.json();
     if (!response.ok) return setError(data.error || "Impossible de charger le registre.");
@@ -58,9 +58,9 @@ export function MileageClient() {
     const nextYearValues: YearValues = {};
     for (const [name] of expenseFields) nextYearValues[name] = String(data.year?.[name] ?? "");
     setYearValues(nextYearValues);
-  }
+  }, [year]);
 
-  useEffect(() => { void load(year); }, [year]);
+  useEffect(() => { void load(year); }, [year, load]);
 
   function chooseVisit(visitId: string) {
     setSelectedVisitId(visitId);
@@ -138,7 +138,7 @@ export function MileageClient() {
   return (
     <section className="grid min-w-0 gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div><h2 className="font-[family-name:var(--font-barlow-condensed)] text-3xl font-bold md:text-4xl">Kilométrage et impôts</h2><p className="text-sm text-emerald-800">Registre des déplacements d'affaires et export pour le comptable.</p></div>
+        <div><h2 className="font-[family-name:var(--font-barlow-condensed)] text-3xl font-bold md:text-4xl">Kilométrage et impôts</h2><p className="text-sm text-emerald-800">Registre des déplacements d’affaires et export pour le comptable.</p></div>
         <label className="grid gap-1 text-sm font-semibold">Année<input type="number" min="2020" max="2100" value={year} onChange={(event) => setYear(Number(event.target.value))} className="rounded-lg border border-emerald-200 px-3 py-2" /></label>
       </div>
       {error ? <p className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</p> : null}

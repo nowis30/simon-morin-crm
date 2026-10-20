@@ -24,8 +24,18 @@ export async function POST(request: NextRequest) {
   }
 
   const { prospect, visit } = parsed.data;
-  const property = await prisma.property.findUnique({ where: { id: visit.propertyId } });
-  if (!property) {
+  const startsAt = new Date(visit.startsAt);
+  const endsAt = visit.endsAt ? new Date(visit.endsAt) : new Date(startsAt.getTime() + 30 * 60 * 1000);
+  if (endsAt <= startsAt || endsAt.getTime() - startsAt.getTime() > 24 * 60 * 60 * 1000) {
+    return NextResponse.json({ error: "Horaire de visite invalide" }, { status: 400 });
+  }
+  const property = await prisma.property.findUnique({
+    where: { id: visit.propertyId },
+    include: { rentalUnit: { select: { status: true, isPubliclyVisible: true } } },
+  });
+  if (!property || property.status !== "AVAILABLE" || property.archivedAt ||
+      (visit.rentalUnitId && visit.rentalUnitId !== property.rentalUnitId) ||
+      (property.rentalUnit && (property.rentalUnit.status !== "AVAILABLE" || property.rentalUnit.isPubliclyVisible === false))) {
     return NextResponse.json({ error: "Cette propriété n’est plus disponible pour la visite." }, { status: 404 });
   }
 
@@ -41,6 +51,7 @@ export async function POST(request: NextRequest) {
   });
 
   const mergedNotes = [
+    `Demande publique de ${cleanText(prospect.name)} — ${normalizedPhone} — ${normalizedEmail}`,
     prospect.occupantsCount ? `Occupants: ${prospect.occupantsCount}` : null,
     prospect.maxBudget ? `Budget maximal: ${prospect.maxBudget}$` : null,
     prospect.bedroomsNeeded !== undefined ? `Chambres recherchees: ${prospect.bedroomsNeeded}` : null,
@@ -68,11 +79,9 @@ export async function POST(request: NextRequest) {
   };
 
   const prospectRecord = existingProspect
-    ? await prisma.prospect.update({ where: { id: existingProspect.id }, data: prospectPayload })
+    ? existingProspect
     : await prisma.prospect.create({ data: prospectPayload });
 
-  const startsAt = new Date(visit.startsAt);
-  const endsAt = visit.endsAt ? new Date(visit.endsAt) : new Date(startsAt.getTime() + 30 * 60 * 1000);
   const idempotencyKey = `public-${property.id}-${prospectRecord.id}-${startsAt.getTime()}`;
 
   const existingVisit = await prisma.visit.findUnique({ where: { idempotencyKey } });

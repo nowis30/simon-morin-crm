@@ -40,23 +40,16 @@ export async function POST(request: NextRequest) {
   });
 
   const now = new Date();
-  const message = cleanText(parsed.data.message);
+  const message = [
+    `Demande publique de ${cleanText(parsed.data.name)} — ${normalizedPhone} — ${normalizedEmail}`,
+    cleanText(parsed.data.message),
+  ].join("\n");
   const preferredMethod = parsed.data.preferredContactMethod;
 
   const duplicateSince = new Date(now.getTime() - 5 * 60 * 1000);
 
   const prospect = existingProspect
-    ? await prisma.prospect.update({
-        where: { id: existingProspect.id },
-        data: {
-          name: cleanText(parsed.data.name),
-          phone: normalizedPhone || cleanText(parsed.data.phone),
-          email: normalizedEmail || null,
-          status: "TO_CONTACT",
-          lastContactAt: now,
-          notes: [existingProspect.notes, `Contact public: ${message}`].filter(Boolean).join("\n\n").slice(0, 1500),
-        },
-      })
+    ? existingProspect
     : await prisma.prospect.create({
         data: {
           name: cleanText(parsed.data.name),

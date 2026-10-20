@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "node:crypto";
 import { createSessionToken, hasAnyAdmin, setSessionCookie, verifyPassword } from "@/lib/auth";
 import { validateCsrfToken } from "@/lib/csrf";
 import { prisma } from "@/lib/prisma";
@@ -18,18 +19,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Configuration initiale requise" }, { status: 409 });
     }
 
-    const rate = checkRateLimit(getClientIp(request));
+    const rate = checkRateLimit(`login-ip:${getClientIp(request)}`);
     if (!rate.allowed) {
       return NextResponse.json({ error: "Trop de tentatives, reessayez plus tard" }, { status: 429 });
     }
 
-    const payload = await request.json();
+    const payload = await request.json().catch(() => ({}));
     const parsed = loginSchema.safeParse(payload);
     if (!parsed.success) {
       return NextResponse.json({ error: "Donnees invalides" }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({ where: { email: parsed.data.email.toLowerCase() } });
+    const email = parsed.data.email.toLowerCase();
+    const accountKey = createHash("sha256").update(email).digest("hex");
+    if (!checkRateLimit(`login-account:${accountKey}`, 20).allowed) {
+      return NextResponse.json({ error: "Trop de tentatives, reessayez plus tard" }, { status: 429 });
+    }
+    const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
       return NextResponse.json({ error: "Identifiants invalides" }, { status: 401 });
     }

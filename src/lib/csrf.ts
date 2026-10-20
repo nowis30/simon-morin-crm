@@ -1,6 +1,5 @@
 import crypto from "node:crypto";
 import { cookies } from "next/headers";
-import { NextRequest } from "next/server";
 import { env } from "@/lib/env";
 
 const CSRF_COOKIE = "simon_csrf";
@@ -32,7 +31,7 @@ export async function validateCsrfToken(headerToken: string | null) {
   return Boolean(cookieToken && headerToken && cookieToken === headerToken);
 }
 
-export async function validateCsrfRequest(request: NextRequest) {
+export async function validateCsrfRequest(request: Request) {
   const headerToken = request.headers.get("x-csrf-token");
   if (await validateCsrfToken(headerToken)) {
     return true;

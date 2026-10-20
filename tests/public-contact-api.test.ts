@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { NextRequest } from "next/server";
 
 const { prismaMock, auditMock } = vi.hoisted(() => ({
   prismaMock: {
@@ -23,7 +24,7 @@ describe("public contact API", () => {
   it("accepts valid payload and creates prospect interaction without visit", async () => {
     const { POST } = await import("@/app/api/public/contact/route");
     const response = await POST(
-      new Request("http://localhost/api/public/contact", {
+      new NextRequest("http://localhost/api/public/contact", {
         method: "POST",
         body: JSON.stringify({
           name: "Alice Martin",
@@ -48,7 +49,7 @@ describe("public contact API", () => {
   it("ignores honeypot spam payload", async () => {
     const { POST } = await import("@/app/api/public/contact/route");
     const response = await POST(
-      new Request("http://localhost/api/public/contact", {
+      new NextRequest("http://localhost/api/public/contact", {
         method: "POST",
         body: JSON.stringify({
           name: "Bot",
@@ -76,7 +77,7 @@ describe("public contact API", () => {
 
     const { POST } = await import("@/app/api/public/contact/route");
     const response = await POST(
-      new Request("http://localhost/api/public/contact", {
+      new NextRequest("http://localhost/api/public/contact", {
         method: "POST",
         body: JSON.stringify({
           name: "Alice Martin",
@@ -91,7 +92,7 @@ describe("public contact API", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(prismaMock.prospect.update).toHaveBeenCalled();
+    expect(prismaMock.prospect.update).not.toHaveBeenCalled();
     expect(prismaMock.prospectInteraction.create).not.toHaveBeenCalled();
   });
 });

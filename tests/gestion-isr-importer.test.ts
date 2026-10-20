@@ -48,12 +48,12 @@ describe("gestion-isr importer", () => {
       ),
     );
 
-    const listings = await fetchGestionIsrListings("https://example.com/logements");
+    const listings = await fetchGestionIsrListings("https://location.gestion-isr.com/logements");
 
     expect(listings.length).toBe(3);
     expect(listings[0].codeIsr).toContain("ISR-");
     expect(listings[0].monthlyPrice).toBeGreaterThan(0);
-    expect(listings[0].photoUrls[0]).toContain("https://example.com");
+    expect(listings[0].photoUrls[0]).toContain("https://location.gestion-isr.com");
   });
 
   it("detecte les logements ISR a retirer lorsqu'ils ne sont plus sur la source", () => {

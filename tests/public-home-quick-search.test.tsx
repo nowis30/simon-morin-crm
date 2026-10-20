@@ -3,13 +3,13 @@
 import { describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 
-const mockFetch = vi.fn();
+vi.mock("@/lib/public-catalog", () => ({
+  getPublicCatalog: vi.fn().mockResolvedValue({ items: [] }),
+}));
 
 describe("home quick search", () => {
   it("renders quick search form targeting /logements query params", async () => {
     vi.resetModules();
-    mockFetch.mockResolvedValue({ ok: true, json: async () => ({ items: [] }) });
-    vi.stubGlobal("fetch", mockFetch as unknown as typeof fetch);
 
     const pageModule = await import("@/app/(public)/page");
     const element = await pageModule.default();

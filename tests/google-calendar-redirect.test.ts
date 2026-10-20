@@ -27,7 +27,7 @@ describe("google calendar redirect resolution", () => {
   });
 
   it("uses the same configured redirect URI when exchanging the OAuth code", async () => {
-    const fetchSpy = vi.fn(async (_url: string, init?: RequestInit) => ({
+    const fetchSpy = vi.fn<(...args: [string, RequestInit?]) => Promise<{ ok: boolean; json: () => Promise<Record<string, unknown>> }>>(async () => ({
       ok: true,
       json: async () => ({ access_token: "access-token", expires_in: 3600, token_type: "Bearer", scope: "scope-a" }),
     }));

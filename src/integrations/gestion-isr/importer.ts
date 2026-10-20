@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import * as cheerio from "cheerio";
+import { fetchIsrText } from "./source-policy";
 
 export type GestionIsrListing = {
   codeIsr: string;
@@ -325,36 +326,22 @@ export function normalizeGestionIsrSupabaseListings(records: GestionIsrSupabaseR
 }
 
 export async function fetchGestionIsrRawRecords(sourceUrl: string) {
-  const response = await fetch(sourceUrl, {
-    headers: {
+  const html = await fetchIsrText(sourceUrl, {
       "User-Agent": "SimonMorinAgentLocation/1.0 (+local-import)",
       Accept: "text/html,application/xhtml+xml",
-    },
   });
-
-  if (!response.ok) {
-    throw new Error(`Import Gestion ISR impossible (${response.status})`);
-  }
-
-  const html = await response.text();
   const config = discoverSupabaseConfig(html);
   if (!config) {
     return null;
   }
 
-  const supabaseResponse = await fetch(`${config.supabaseUrl}/rest/v1/listings?select=*&statut=eq.Actif`, {
-    headers: {
+  const json = await fetchIsrText(`${config.supabaseUrl}/rest/v1/listings?select=*&statut=eq.Actif`, {
       apikey: config.supabaseAnon,
       Authorization: `Bearer ${config.supabaseAnon}`,
       Accept: "application/json",
-    },
-  });
-
-  if (!supabaseResponse.ok) {
-    throw new Error(`Source Supabase ISR inaccessible (${supabaseResponse.status})`);
-  }
-
-  const data = (await supabaseResponse.json()) as GestionIsrSupabaseRecord[];
+  }, true);
+  const data = JSON.parse(json) as GestionIsrSupabaseRecord[];
+  if (!Array.isArray(data)) throw new Error("Source ISR invalide");
   return data[0] ?? null;
 }
 
@@ -364,19 +351,13 @@ async function fetchGestionIsrSupabaseListings(sourceUrl: string, html: string) 
     return null;
   }
 
-  const response = await fetch(`${config.supabaseUrl}/rest/v1/listings?select=*&statut=eq.Actif`, {
-    headers: {
+  const json = await fetchIsrText(`${config.supabaseUrl}/rest/v1/listings?select=*&statut=eq.Actif`, {
       apikey: config.supabaseAnon,
       Authorization: `Bearer ${config.supabaseAnon}`,
       Accept: "application/json",
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Source Supabase ISR inaccessible (${response.status})`);
-  }
-
-  const data = (await response.json()) as GestionIsrSupabaseRecord[];
+  }, true);
+  const data = JSON.parse(json) as GestionIsrSupabaseRecord[];
+  if (!Array.isArray(data)) throw new Error("Source ISR invalide");
   return normalizeGestionIsrSupabaseListings(data, sourceUrl);
 }
 
@@ -436,18 +417,10 @@ export function selectGestionIsrCodesToRemove(input: {
 }
 
 export async function fetchGestionIsrListings(url: string): Promise<GestionIsrListing[]> {
-  const response = await fetch(url, {
-    headers: {
+  const html = await fetchIsrText(url, {
       "User-Agent": "SimonMorinAgentLocation/1.0 (+local-import)",
       Accept: "text/html,application/xhtml+xml",
-    },
   });
-
-  if (!response.ok) {
-    throw new Error(`Import Gestion ISR impossible (${response.status})`);
-  }
-
-  const html = await response.text();
   const supabaseListings = await fetchGestionIsrSupabaseListings(url, html);
   if (supabaseListings && supabaseListings.length > 0) {
     return supabaseListings;

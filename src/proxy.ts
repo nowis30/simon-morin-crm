@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { AUTH_COOKIE_NAME } from "@/lib/auth";
 
 const PUBLIC_PATHS = [
   "/",
@@ -12,7 +11,9 @@ const PUBLIC_PATHS = [
   "/data-deletion",
   "/manifest.webmanifest",
   "/sw.js",
-  "/workbox-4754cb34.js",
+  "/register-sw.js",
+  "/robots.txt",
+  "/sitemap.xml",
   "/icons",
 ];
 
@@ -26,7 +27,7 @@ const PUBLIC_API_PATHS = [
   "/api/integrations/meta/webhook",
 ];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname.startsWith("/_next") || pathname.startsWith("/icons") || pathname === "/favicon.ico") {
@@ -36,7 +37,9 @@ export function middleware(request: NextRequest) {
   if (pathname.startsWith("/api")) {
     const isPublicApi = PUBLIC_API_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
     if (isPublicApi) {
-      return NextResponse.next();
+      const response = NextResponse.next();
+      response.headers.set("Cache-Control", "private, no-store");
+      return response;
     }
   } else {
     const isPublic = PUBLIC_PATHS.some((path) => path === "/" ? pathname === "/" : pathname === path || pathname.startsWith(`${path}/`));
@@ -45,14 +48,22 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+  const token = request.cookies.get("simon_session")?.value;
   if (!token) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Authentification requise" }, {
+        status: 401,
+        headers: { "Cache-Control": "private, no-store" },
+      });
+    }
     const url = new URL("/login", request.url);
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  response.headers.set("Cache-Control", "private, no-store");
+  return response;
 }
 
 export const config = {

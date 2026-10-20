@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { validateCsrfRequest } from "@/lib/csrf";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { clearSessionCookie, hashPassword, verifyPassword } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { requireApiUser, safeServerError } from "@/lib/route-guards";
@@ -14,6 +16,12 @@ export async function POST(request: NextRequest) {
     const auth = await requireApiUser();
     if (auth.response) {
       return auth.response;
+    }
+    if (!(await validateCsrfRequest(request))) {
+      return NextResponse.json({ error: "CSRF invalide" }, { status: 403 });
+    }
+    if (!checkRateLimit(`password-change:${auth.user.id}`, 5).allowed) {
+      return NextResponse.json({ error: "Trop de tentatives, reessayez plus tard" }, { status: 429 });
     }
 
     const parsed = changePasswordSchema.safeParse(await request.json().catch(() => ({})));

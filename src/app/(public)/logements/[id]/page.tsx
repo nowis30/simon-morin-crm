@@ -55,6 +55,9 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
   });
 
   if (rentalUnit) {
+    if (rentalUnit.isPubliclyVisible === false || ["ARCHIVED", "REMOVED"].includes(rentalUnit.status)) {
+      notFound();
+    }
     const isUnavailable = !isRentalUnitPubliclyAvailable({
       status: rentalUnit.status,
       isPubliclyVisible: rentalUnit.isPubliclyVisible,
@@ -199,7 +202,7 @@ export default async function PublicListingDetailPage({ params }: { params: Prom
     include: { photos: { orderBy: { sortOrder: "asc" } } },
   });
 
-  if (!property || !isPropertyPubliclyAvailable({
+  if (!property || property.archivedAt || property.rentalUnitId || !isPropertyPubliclyAvailable({
     status: property.status,
     address: property.address,
     city: property.city,

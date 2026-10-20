@@ -20,7 +20,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       bedrooms: rentalUnit.bedrooms,
       description: rentalUnit.publicDescription || rentalUnit.description,
     })) {
-      return NextResponse.json({ error: "Ce logement n’est plus disponible — voir les logements semblables." }, { status: 200 });
+      return NextResponse.json({ error: "Ce logement n’est plus disponible — voir les logements semblables." }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -53,7 +53,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     include: { photos: { orderBy: { sortOrder: "asc" } } },
   });
 
-  if (!property || !isPropertyPubliclyAvailable({
+  if (!property || property.archivedAt || property.rentalUnitId || !isPropertyPubliclyAvailable({
     status: property.status,
     address: property.address,
     city: property.city,
@@ -62,7 +62,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     bedrooms: property.bedrooms,
     description: property.descriptionFr,
   })) {
-    return NextResponse.json({ error: "Ce logement n’est plus disponible — voir les logements semblables." }, { status: 200 });
+    return NextResponse.json({ error: "Ce logement n’est plus disponible — voir les logements semblables." }, { status: 404 });
   }
 
   return NextResponse.json({

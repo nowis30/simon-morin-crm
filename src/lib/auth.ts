@@ -10,6 +10,7 @@ const encoder = new TextEncoder();
 type SessionPayload = {
   userId: string;
   email: string;
+  tokenVersion: number;
 };
 
 export async function hashPassword(password: string) {
@@ -69,7 +70,16 @@ export async function getCurrentUser() {
 
   try {
     const payload = await readSessionToken(session);
-    return prisma.user.findUnique({ where: { id: payload.userId } });
+    const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+    if (!user) {
+      return null;
+    }
+    // Invalide les sessions émises avant un changement de mot de passe
+    // (les jetons émis avant l'ajout de tokenVersion valent 0 par défaut).
+    if ((payload.tokenVersion ?? 0) !== user.tokenVersion) {
+      return null;
+    }
+    return user;
   } catch {
     return null;
   }

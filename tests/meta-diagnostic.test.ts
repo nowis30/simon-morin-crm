@@ -124,6 +124,38 @@ describe("Meta diagnostic", () => {
     expect(result.issues.some((issue) => issue.includes("pages_manage_posts"))).toBe(true);
   });
 
+  it("verifies a connected account without requesting the unsupported Page perms field", async () => {
+    findMetaConnection.mockResolvedValue({
+      id: "conn-1",
+      pageAccessTokenEncrypted: "page-token",
+      userAccessTokenEncrypted: "user-token",
+      pageName: "Simon Page",
+      scopes: [],
+    });
+
+    vi.spyOn(global, "fetch").mockImplementation(async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith("/me/accounts")) {
+        if (url.searchParams.get("fields")?.split(",").includes("perms")) {
+          return jsonResponse({ error: { code: 100, message: "Nonexisting field (perms) on node type (Page)" } }, false, 400);
+        }
+        return jsonResponse({ data: [{ id: "page-1", name: "Simon Page" }] });
+      }
+      if (url.pathname.endsWith("/debug_token")) {
+        return jsonResponse({ data: { is_valid: true, scopes: ["pages_show_list", "pages_read_engagement", "pages_manage_posts"] } });
+      }
+      return jsonResponse({ id: "page-1", name: "Simon Page" });
+    });
+
+    const result = await (await import("@/lib/meta-facebook")).getMetaDiagnostic("user-1");
+    expect(result.connectionExists).toBe(true);
+    expect(result.tokenValid).toBe(true);
+    expect(result.pageIdMatches).toBe(true);
+    expect(result.missingScopes).toEqual([]);
+    expect(result.issues.some((issue) => issue.includes("Impossible de verifier"))).toBe(false);
+    expect(JSON.stringify(result)).not.toContain("user-token");
+  });
+
   it("detects configured page not found in /me/accounts", async () => {
     findMetaConnection.mockResolvedValue({
       id: "conn-1",

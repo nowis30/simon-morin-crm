@@ -664,9 +664,9 @@ export async function getMetaDiagnostic(userId: string): Promise<MetaDiagnosticR
   if (userToken) {
     const accountsQuery = new URLSearchParams({
       access_token: userToken,
-      fields: "id,name,perms",
+      fields: "id,name",
     });
-    const accountsResult = await fetchMetaJson<{ data?: Array<{ id: string; name: string; perms?: string[] }> }>(`${GRAPH_BASE}/me/accounts?${accountsQuery.toString()}`);
+    const accountsResult = await fetchMetaJson<{ data?: Array<{ id: string; name: string }> }>(`${GRAPH_BASE}/me/accounts?${accountsQuery.toString()}`);
 
     if (accountsResult.response.ok) {
       const page = (accountsResult.payload.data ?? []).find((item) => item.id === env.META_PAGE_ID);

@@ -84,6 +84,10 @@ try {
   }
   check(ready, "Production server and test DB healthy");
   const anonymous = client();
+  for (const path of ["/logo.png", "/annonce.png"]) {
+    const asset = await anonymous.request(path);
+    check(asset.status === 200 && asset.headers.get("content-type")?.startsWith("image/"), `Public brand image available: ${path}`);
+  }
   const publicPaths = ["/api/health", "/api/csrf", "/api/setup", "/api/auth/login", "/api/auth/logout", "/api/integrations/meta/webhook"];
   for (const path of await apiPaths()) {
     if (path.startsWith("/api/public/") || publicPaths.includes(path)) continue;

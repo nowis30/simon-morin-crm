@@ -14,6 +14,8 @@ const PUBLIC_PATHS = [
   "/register-sw.js",
   "/robots.txt",
   "/sitemap.xml",
+  "/logo.png",
+  "/annonce.png",
   "/icons",
 ];
 

@@ -236,3 +236,14 @@ npx prisma migrate deploy
 ## Notes de conformite
 
 Le score de correspondance n'utilise jamais l'emploi, l'age, l'origine, la situation familiale, la religion, un handicap ou tout autre renseignement protege.
+
+## Première configuration sécurisée
+
+Sur une base vide, `/setup` exige un code d'initialisation en plus de la protection
+CSRF. Définir `SETUP_TOKEN` côté serveur avec une valeur aléatoire distincte de
+`SESSION_SECRET` d'au moins 32 octets (`openssl rand -base64 48`), puis saisir ce
+code dans le formulaire. Il n'est jamais inclus dans le JavaScript public ni
+renvoyé par l'API. Sans ce secret, la création du premier administrateur renvoie
+503 ; un code incorrect renvoie 403. Une fois l'administrateur créé, retirer
+`SETUP_TOKEN` de l'environnement. Les installations existantes restent fermées
+à une seconde initialisation, y compris en cas de requêtes concurrentes.

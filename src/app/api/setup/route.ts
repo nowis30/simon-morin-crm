@@ -4,6 +4,7 @@ import { validateCsrfToken } from "@/lib/csrf";
 import { prisma } from "@/lib/prisma";
 import { cleanText } from "@/lib/sanitize";
 import { setupSchema } from "@/lib/validators";
+import { checkSetupToken } from "@/lib/setup-token";
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,6 +16,14 @@ export async function POST(request: NextRequest) {
     const alreadyConfigured = await hasAnyAdmin();
     if (alreadyConfigured) {
       return NextResponse.json({ error: "Configuration deja effectuee" }, { status: 409 });
+    }
+
+    const setupAccess = checkSetupToken(request.headers.get("x-setup-token"));
+    if (setupAccess === "unconfigured") {
+      return NextResponse.json({ error: "Initialisation indisponible. Contactez le responsable de l'application." }, { status: 503 });
+    }
+    if (setupAccess !== "valid") {
+      return NextResponse.json({ error: "Code d'initialisation invalide" }, { status: 403 });
     }
 
     const payload = await request.json().catch(() => ({}));

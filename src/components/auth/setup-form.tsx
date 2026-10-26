@@ -15,6 +15,7 @@ export function SetupForm() {
 
     const formData = new FormData(event.currentTarget);
 
+    try {
     const csrfResponse = await fetch("/api/csrf");
     const { token } = await csrfResponse.json();
 
@@ -23,6 +24,7 @@ export function SetupForm() {
       headers: {
         "Content-Type": "application/json",
         "x-csrf-token": token,
+        "x-setup-token": String(formData.get("setupToken") ?? ""),
       },
       body: JSON.stringify({
         name: formData.get("name"),
@@ -41,18 +43,27 @@ export function SetupForm() {
 
     router.push("/dashboard");
     router.refresh();
+    } catch {
+      setError("Connexion interrompue. Reessayez la configuration.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <form onSubmit={onSubmit} className="card grid gap-4 p-6">
       <h2 className="font-[family-name:var(--font-barlow-condensed)] text-2xl font-bold">Premiere configuration</h2>
+      <label className="grid gap-2 text-sm">
+        Code d’initialisation fourni par le responsable
+        <input name="setupToken" type="password" autoComplete="off" required minLength={32} maxLength={512} className="rounded-lg border border-emerald-200 bg-white px-4 py-3" />
+      </label>
       <input name="name" required placeholder="Nom" className="rounded-lg border border-emerald-200 bg-white px-4 py-3" />
       <input name="email" type="email" required placeholder="Courriel" className="rounded-lg border border-emerald-200 bg-white px-4 py-3" />
       <input
         name="password"
         type="password"
         required
-        minLength={10}
+        minLength={12}
         placeholder="Mot de passe"
         className="rounded-lg border border-emerald-200 bg-white px-4 py-3"
       />

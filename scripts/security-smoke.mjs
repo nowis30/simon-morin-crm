@@ -2,6 +2,7 @@
 // Never run this against production: it creates fictional users and CRM records.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { randomBytes } from "node:crypto";
 import { readdir } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
 
@@ -13,6 +14,7 @@ assert.equal(await db.user.count(), 0, "Refusing to run on a configured database
 assert.equal(await db.property.count(), 0, "Refusing to run on existing CRM data");
 const port = "3017";
 const origin = `http://127.0.0.1:${port}`;
+const setupToken = randomBytes(32).toString("base64url");
 let serverLogs = "";
 let checks = 0;
 const server = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "-H", "127.0.0.1", "-p", port], {
@@ -21,6 +23,7 @@ const server = spawn(process.execPath, ["node_modules/next/dist/bin/next", "star
     NODE_ENV: "production",
     NEXT_PUBLIC_APP_URL: origin,
     SESSION_SECRET: "local_ci_session_secret_for_smoke_tests_only_1234567890",
+    SETUP_TOKEN: setupToken,
     // No external integration should run during these tests.
     META_DRY_RUN: "true",
   },
@@ -102,8 +105,12 @@ try {
   const setupClients = [client(), client()];
   await Promise.all(setupClients.map((c) => c.request("/api/csrf")));
   const password = "AuditLocalPassword_2026!";
+  const unauthorizedSetup = { name: "Unauthorized fictional admin", email: "unauthorized@example.invalid", password };
+  check((await setupClients[0].request("/api/setup", { method: "POST", body: unauthorizedSetup })).status === 403, "Setup requires the deployment bootstrap code");
+  check((await setupClients[0].request("/api/setup", { method: "POST", body: unauthorizedSetup, headers: { "x-setup-token": "incorrect-code" } })).status === 403, "Setup rejects an incorrect bootstrap code");
+  check(await db.user.count() === 0, "Unauthorized setup creates no administrator");
   const setupResults = await Promise.all(setupClients.map((c, i) =>
-    c.request("/api/setup", { method: "POST", body: { name: `Fictional Admin ${i}`, email: `audit${i}@example.invalid`, password } })));
+    c.request("/api/setup", { method: "POST", headers: { "x-setup-token": setupToken }, body: { name: `Fictional Admin ${i}`, email: `audit${i}@example.invalid`, password } })));
   check(setupResults.map((r) => r.status).sort().join(",") === "200,409", "Concurrent setup creates exactly one administrator");
   check(await db.user.count() === 1, "One administrator in DB");
   const winner = setupResults.findIndex((r) => r.status === 200);
